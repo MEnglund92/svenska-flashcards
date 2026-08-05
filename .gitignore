@@ -15,3 +15,5 @@ __pycache__/
 *.bak
 *.err
 *.log
+*_err.txt
+*_log.txt
