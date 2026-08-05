@@ -184,4 +184,4 @@ Novels (NovelStrategy — all entries go to review, none auto-accepted by design
 - **Piper TTS:** installed `piper-tts 1.6.0` into Python 3.12 (was missing); models at `../tts-models/` (`sv_SE-nst-medium`, `sv_SE-alma-medium`, `en_US-lessac-medium`).
 - Working dirs `questions/` + `novels_text/` kept until final verification is done (2026-08-05, server verified on :5001).
 
-- 2026-08-05 VERIFIED: server on :5001 serves all files; headless Edge renders app without JS errors (289 browse cards); /tts returns WAV (piper 1.6.0 installed in py3.12). Working dirs questions/ + novels_text/ deleted (derivable from novels_reading.json). To use the app: python server.py, then open http://localhost:5001, tab 'L�s'.
+- 2026-08-05 VERIFIED: server on :5001 serves all files; headless Edge renders app without JS errors (289 browse cards); /tts returns WAV (piper 1.6.0 installed in py3.12). Working dirs questions/ + novels_text/ deleted (derivable from novels_reading.json). To use the app: python server.py, then open http://localhost:5001, tab 'Läs'.
