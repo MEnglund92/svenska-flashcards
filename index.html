@@ -1674,38 +1674,50 @@ el.classList.add('show');clearTimeout(el._hide);
 el._hide=setTimeout(function(){el.classList.remove('show')},4000);
 }
 function speak(text,lang,btn){
-if(/[åäöÅÄÖ]/.test(text||'')) lang='sv-SE';
-console.log('[TTS] speak("'+text.substring(0,40)+'", '+lang+')');
-if(window._speakAudio){try{window._speakAudio.pause()}catch(e){}}
-var url='/tts?text='+encodeURIComponent(text)+'&lang='+encodeURIComponent(lang||'en-US')+'&cb='+Date.now();
-console.log('[TTS] url:',url);
-var audio=new Audio(url);
-audio.preload='auto';
-audio.addEventListener('error',function(){
-console.warn('[TTS] Audio error, code:',audio.error?audio.error.code:'unknown');
-showToast('TTS misslyckades — är servern igång?','error');
-if(btn)btn.classList.remove('speaking');
-});
-audio.addEventListener('ended',function(){if(btn)btn.classList.remove('speaking')});
-window._speakAudio=audio;
-var c=document.getElementById('audioContainer');
-if(!c){c=document.createElement('div');c.id='audioContainer';c.style.display='none';document.body.appendChild(c)}
-c.appendChild(audio);
-audio.play().then(function(){console.log('[TTS] playback started')}).catch(function(e){
-console.warn('[TTS] play() failed:',e.message);
-showToast('TTS: '+e.message,'error');
-if(btn)btn.classList.remove('speaking');
-});
-if(btn)setTimeout(function(){btn.classList.remove('speaking')},10000);
+  if(!text){if(btn)btn.classList.remove('speaking');return Promise.resolve();}
+  if(/[\u00E5\u00E4\u00F6\u00C5\u00C4\u00D6]/.test(text||'')) lang='sv-SE';
+  console.log('[TTS] speak("'+text.substring(0,40)+'", '+lang+')');
+  if(window._speakAudio){try{window._speakAudio.pause()}catch(e){}}
+  return new Promise(function(resolve){
+    let done=false;
+    function fallbackWeb(){
+      if(done)return; done=true;
+      let u=new SpeechSynthesisUtterance(text);
+      u.lang=lang||'en-US';
+      let voices=(window.speechSynthesis&&speechSynthesis.getVoices?speechSynthesis.getVoices():[])||[];
+      let v=voices.find(function(x){return (x.lang||'')===u.lang;})||voices.find(function(x){return (x.lang||'').toLowerCase().indexOf(u.lang.toLowerCase())===0;});
+      if(!v&&u.lang.indexOf('sv')===0){ v=voices.find(function(x){return (x.lang||'').indexOf('sv')===0;});}
+      if(v)u.voice=v;
+      if(btn){btn.classList.add('speaking');u.onend=function(){btn.classList.remove('speaking');resolve();};u.onerror=function(){btn.classList.remove('speaking');resolve();}}
+      else {u.onend=resolve;u.onerror=resolve;}
+      try{speechSynthesis.speak(u);}catch(e){console.warn('[TTS] speechSynthesis error',e);if(btn)btn.classList.remove('speaking');resolve();}}
+    if(/[åäöÅÄÖ]/.test(text||'')) lang='sv-SE';
+    var url='/tts?text='+encodeURIComponent(text)+'&lang='+encodeURIComponent(lang||'en-US')+'&cb='+Date.now();
+    console.log('[TTS] url:',url);
+    var audio=new Audio(url);
+    audio.preload='auto';
+    audio.addEventListener('error',function(){ console.warn('[TTS] server /tts failed, fallback to speechSynthesis:',url); fallbackWeb(); });
+    audio.addEventListener('ended',function(){ if(btn)btn.classList.remove('speaking'); resolve(); });
+    if(btn)setTimeout(function(){ if(!done&&btn)btn.classList.remove('speaking'); },10000);
+    window._speakAudio=audio;
+    var c=document.getElementById('audioContainer');
+    if(!c){c=document.createElement('div');c.id='audioContainer';c.style.display='none';document.body.appendChild(c)}
+    c.appendChild(audio);
+    audio.play().then(function(){ console.log('[TTS] playback started'); if(btn)btn.classList.add('speaking'); }).catch(function(e){
+      console.warn('[TTS] play() failed:',e.message,'; fallback to speechSynthesis');
+      showToast('TTS-servern svarar inte \u2014 anv\u00E4nder webbl\u00E4sarens r\u00F6st','warn');
+      fallbackWeb();
+    });
+  });
 }
 function makeSpeaker(text,lang,cls){
 let ic='\u{1F50A}';let a=lang||'en-US';if(/[åäöÅÄÖ]/.test(text||''))a='sv-SE';
-return '<button class="speaker-btn'+(cls?' '+cls:'')+'" data-lang="'+a+'" data-text="'+text.replace(/"/g,'&quot;')+'" aria-label="Spela upp ljud">'+ic+'</button>';
+return '<button type="button" class="speaker-btn'+(cls?' '+cls:'')+'" data-lang="'+a+'" data-text="'+text.replace(/"/g,'&quot;')+'" aria-label="Spela upp ljud">'+ic+'</button>';
 }
-document.addEventListener('click',function(e){
+document.addEventListener('click',async function(e){
 let btn=e.target.closest('.speaker-btn');if(!btn)return;
 e.stopPropagation();let txt=btn.dataset.text;if(!txt)return;
-btn.classList.add('speaking');speak(txt,btn.dataset.lang,btn);
+btn.classList.add('speaking');await speak(txt,btn.dataset.lang,btn);
 });
 function makeMic(phrase,courseId,cb){
 let b=document.createElement('button');
@@ -2950,7 +2962,28 @@ document.getElementById('conjPlaceholder').style.display='block';
 document.getElementById('conjArea').style.display='none';
 document.getElementById('conjResult').style.display='none';
 sidebarWire();
-fetch('/tts?text=test&cb='+Date.now(),{method:'HEAD'}).catch(function(){showToast('TTS-servern svarar inte — starta med python server.py','error')});
+window.__STATIC_HOST=false;
+(function initStaticCheck(){
+  fetch('/tts?text=test&cb='+Date.now(),{method:'HEAD'}).then(function(r){ window.__STATIC_HOST=(r.status!==200&&r.status!==204); checkStaticHost(); }).catch(function(){ window.__STATIC_HOST=true; checkStaticHost(); });
+})();
+function checkStaticHost(){
+  if(!window.__STATIC_HOST) return;
+  showToast('Offline-l\u00E4ge p\u00E5 webb: TTS anv\u00E4nder webbl\u00E4sarens r\u00F6st. F\u00F6r L\u00E4s + PDF-resurser, k\u00F6r python server.py lokalt.','warn');
+  let rNav=document.querySelector('.nav-item[data-tab="read"]'); if(rNav) rNav.style.display='none';
+  let rPanel=document.getElementById('tab-read'); if(rPanel) rPanel.style.display='none';
+  let rg=document.getElementById('resGrid');
+  if(rg){
+    rg.addEventListener('click',function(e){
+      let a=e.target.closest('a.res-open, a.resource-card-link, .facit-link');
+      if(!a||!a.href) return;
+      if(a.href.indexOf('http://')===0||a.href.indexOf('https://')===0) return;
+      let parts=a.href.split('.');let ext=parts.length>1?parts[parts.length-1].toLowerCase():'';
+      if(['pdf','png','jpg','jpeg','gif','mp3','wav','mp4','webm','docx','pptx','xlsx'].indexOf(ext)!==-1||a.href.indexOf('ovning')!==-1||a.href.indexOf('facit')!==-1){
+        e.preventDefault(); showToast('Denna fil finns endast i den lokala appen (python server.py).','warn');
+      }
+    });
+  }
+}
 if('serviceWorker'in navigator)navigator.serviceWorker.register('sw.js').catch(function(){});
 });
 }catch(e){document.body.innerHTML='<div style="padding:40px;color:var(--error-bright);font-family:monospace"><h2>Application Error</h2><pre>'+e.message+'\n'+e.stack+'</pre></div>'}
