@@ -1,0 +1,13 @@
+{
+  "name": "Svenska — Swedish Study App",
+  "short_name": "Svenska",
+  "description": "Complete Swedish language study app with flashcards, quizzes, matching, grammar concepts, resources, and novel reading",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a0a14",
+  "theme_color": "#388e3c",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}

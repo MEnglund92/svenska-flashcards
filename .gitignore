@@ -1,0 +1,17 @@
+# Copyrighted / local-only content
+Sources/
+data_*.json
+*_checkpoint.json
+novels_reading.json
+vocab_translations.json
+svensk_ordbok_page51.txt
+__concepts_block.js
+
+# Python
+__pycache__/
+*.pyc
+
+# Backups & logs
+*.bak
+*.err
+*.log
