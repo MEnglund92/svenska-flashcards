@@ -3,6 +3,15 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<script>
+try{
+  var pW=Math.min(screen.width,screen.height);
+  if(pW<=640&&innerWidth>640&&!matchMedia('(orientation: landscape)').matches){
+    var m=document.querySelector('meta[name="viewport"]');
+    if(m)m.setAttribute('content','width='+pW+',initial-scale=1.0,viewport-fit=cover');
+  }
+}catch(e){}
+</script>
 <meta name="theme-color" content="#050508">
 <meta name="apple-mobile-web-app-title" content="Svenska">
 <meta name="mobile-web-app-capable" content="yes">
