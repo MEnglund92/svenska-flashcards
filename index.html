@@ -562,6 +562,22 @@ input,textarea{-webkit-user-select:auto;user-select:auto}
 .deck-nav-btn:disabled{opacity:.35;cursor:default}
 .deck-pos{font-size:.8rem;color:var(--text-tertiary);font-weight:600}
 
+/* ===== DAILY DRILL ===== */
+.drill-empty{background:var(--card-bg);border:1px solid var(--card-border);border-radius:var(--radius-card);padding:18px 16px;font-size:.88rem;color:var(--text-secondary);text-align:center}
+.drill-row{display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--card-bg);border:1px solid var(--card-border);border-radius:var(--radius-card);padding:16px;flex-wrap:wrap}
+.drill-info{font-size:.9rem;font-weight:600}
+.drill-hint{font-size:.75rem;color:var(--text-tertiary);font-weight:400;margin-top:3px}
+.drill-start{min-height:44px;padding:10px 22px;border-radius:var(--radius-pill);border:1px solid var(--accent);background:var(--accent);color:#fff;font-weight:700;font-family:var(--font-ui);font-size:.85rem;cursor:pointer}
+.drill-start:disabled{opacity:.4;cursor:default}
+.drill-actions{display:flex;gap:10px;justify-content:center;margin-top:14px}
+.drill-btn{flex:1;min-height:48px;border-radius:16px;font-family:var(--font-ui);font-weight:700;font-size:.9rem;cursor:pointer;border:1px solid var(--border);touch-action:manipulation}
+.drill-btn.knew{background:rgba(74,222,128,0.14);border-color:rgba(74,222,128,0.4);color:var(--success)}
+.drill-btn.forgot{background:rgba(248,113,113,0.12);border-color:rgba(248,113,113,0.35);color:var(--error)}
+.drill-done{background:var(--card-bg);border:1px solid var(--card-border);border-radius:var(--radius-card);padding:22px 16px;text-align:center}
+.drill-score{font-size:2rem;font-weight:800;color:var(--accent)}
+.drill-score-lbl{font-size:.82rem;color:var(--text-secondary);margin:4px 0 14px}
+.drill-end{min-height:44px;padding:10px 22px;border-radius:var(--radius-pill);border:1px solid var(--border);background:var(--surface-2);color:var(--text-secondary);font-weight:600;font-family:var(--font-ui);font-size:.85rem;cursor:pointer}
+
 /* ===== STREAK PILL ===== */
 .streak-pill{display:none;align-items:center;gap:5px;background:var(--accent-soft);border:1px solid var(--accent);color:var(--accent);font-weight:700;font-size:0.75rem;border-radius:20px;padding:5px 12px;white-space:nowrap}
 
@@ -1238,6 +1254,18 @@ const langStrings={sv:{
 'home.step2d':'Börja med Flashkort, Quiz eller Läs och lägg till ord i din SRS-kö för repetition.',
 'home.step3t':'Repetera varje dag',
 'home.step3d':'Håll streak igång och låt SRS schemalägga repetitioner precis innan du glömmer.',
+'drill.title':'Öva idag',
+'drill.none':'Inga svaga ord just nu. Bra jobbat! 🎉',
+'drill.weakCount':'{n} svaga ord att öva',
+'drill.pickCourse':'Välj en kurs för att starta',
+'drill.start':'Starta drill',
+'drill.reveal':'Visa översättning',
+'drill.hide':'Dölj',
+'drill.forgot':'Glömde',
+'drill.knew':'Kunde',
+'drill.score':'{k} av {t} rätt',
+'drill.again':'Gör om',
+'drill.close':'Klar',
 'sidebar.themeDark':'Ljust läge',
 'sidebar.themeLight':'Mörkt läge',
 'error.title':'Applikationsfel',
@@ -1578,6 +1606,18 @@ const langStrings={sv:{
 'home.step2d':'Start with Flashcards, Quiz or Reading and add words to your SRS queue for review.',
 'home.step3t':'Review every day',
 'home.step3d':'Keep your streak alive and let SRS schedule reviews right before you forget.',
+'drill.title':'Practice today',
+'drill.none':'No weak words right now. Great job! 🎉',
+'drill.weakCount':'{n} weak words to practice',
+'drill.pickCourse':'Select a course to start',
+'drill.start':'Start drill',
+'drill.reveal':'Show translation',
+'drill.hide':'Hide',
+'drill.forgot':'Forgot',
+'drill.knew':'Knew',
+'drill.score':'{k} of {t} correct',
+'drill.again':'Again',
+'drill.close':'Done',
 'sidebar.themeDark':'Light mode',
 'sidebar.themeLight':'Dark mode',
 'error.title':'Application Error',
@@ -2028,10 +2068,54 @@ let steps=[
 let stepHtml=steps.map(s=>'<div class="home-step"><div class="home-step-num">'+s.n+'</div><div class="home-step-title">'+s.t+'</div><div class="home-step-desc">'+s.d+'</div></div>').join('');
 el.innerHTML='<div class="home-hero"><div class="home-tag">'+t('home.tag')+'</div><h1>'+t('home.title')+'</h1><p>'+t('home.subtitle',{courses:courses.length,words:totalWords})+'</p></div>'+
 '<div class="home-stats">'+statHtml+'</div>'+
+'<div id="drillSection"></div>'+
 '<div class="home-section"><div class="home-section-title">'+t('home.quick')+'</div><div class="home-qa-row">'+qaHtml+'</div></div>'+
 '<div class="home-section"><div class="home-section-title">'+t('home.toolsTitle')+'</div><div class="home-tools">'+toolHtml+'</div></div>'+
 '<div class="home-section"><div class="home-section-title">'+t('home.stepsTitle')+'</div><div class="home-steps">'+stepHtml+'</div></div>';
 el.querySelectorAll('.home-tool,.home-qa').forEach(b=>b.addEventListener('click',function(){let nav=document.querySelector('.nav-item[data-tab="'+this.dataset.goto+'"]');if(nav)nav.click()}));
+renderDrillHome();
+}
+
+// ===== DAILY DRILL =====
+let drillWords=[],drillIdx=0,drillKnew=0;
+function getWeakWords(){
+if(currentCourse<0)return[];
+let cid=courses[currentCourse].id;
+let ws=loadStats(cid).wordStats||{};
+return getActiveData().filter(e=>{let w=ws[e.phrase];return w&&(w.correct+w.incorrect)>=3&&w.incorrect/(w.correct+w.incorrect)>=0.4});
+}
+function startDrill(){drillWords=shuffleArray(getWeakWords());drillIdx=0;drillKnew=0;renderDrillHome()}
+function endDrill(){drillWords=[];drillIdx=0;renderDrillHome()}
+function renderDrillHome(){
+let el=document.getElementById('drillSection');if(!el)return;
+if(drillWords.length===0){
+let n=getWeakWords().length;
+if(n===0){el.innerHTML='<div class="home-section"><div class="home-section-title">'+t('drill.title')+'</div><div class="drill-empty">'+t('drill.none')+'</div></div>';return;}
+el.innerHTML='<div class="home-section"><div class="home-section-title">'+t('drill.title')+'</div><div class="drill-row"><div class="drill-info">'+t('drill.weakCount',{n})+(currentCourse<0?'<div class="drill-hint">'+t('drill.pickCourse')+'</div>':'')+'</div><button class="drill-start" type="button"'+(currentCourse<0?' disabled':'')+'>'+t('drill.start')+'</button></div></div>';
+let b=el.querySelector('.drill-start');if(b)b.addEventListener('click',startDrill);
+return;
+}
+if(drillIdx>=drillWords.length){
+let pct=Math.round(drillKnew/drillWords.length*100);
+el.innerHTML='<div class="home-section"><div class="home-section-title">'+t('drill.title')+'</div><div class="drill-done"><div class="drill-score">'+pct+'%</div><div class="drill-score-lbl">'+t('drill.score',{k:drillKnew,t:drillWords.length})+'</div><div class="drill-actions"><button class="drill-end" type="button" id="drillClose">'+t('drill.close')+'</button><button class="drill-start" type="button" id="drillAgain">'+t('drill.again')+'</button></div></div></div>';
+let a=el.querySelector('#drillAgain');if(a)a.addEventListener('click',startDrill);
+let cl=el.querySelector('#drillClose');if(cl)cl.addEventListener('click',endDrill);
+return;
+}
+let e=drillWords[drillIdx];let cc=getCatColor(e.category);let cn=getCatName(e.category);
+let sp=makeSpeaker(e.phrase,'sv-SE');let spSen=e.sentence?makeSpeaker(e.sentence,'sv-SE'):'';
+el.innerHTML='<div class="home-section"><div class="home-section-title">'+t('drill.title')+'</div><div class="progress-head"><div class="bar-track"><div class="bar-fill" style="width:'+Math.round(drillIdx/drillWords.length*100)+'%"></div></div><span class="pg-label">'+(drillIdx+1)+'/'+drillWords.length+'</span></div><div class="vocab-card deck-card drill-card"><div class="deck-head"><span class="cat-tag" style="background:'+cc+'38;color:'+cc+'">'+cn+'</span></div><div class="phrase">'+e.phrase+sp+'</div><div class="meaning">'+e.meaning+'</div><button class="card-trans-btn" type="button" id="drillReveal">'+t('drill.reveal')+'</button><div class="translation-wrap" id="drillTrans"><div class="translation">'+e.translation+'</div>'+(e.sentence?'<div class="sentence-line">'+e.sentence+spSen+'</div>':'')+'</div></div><div class="drill-actions"><button class="drill-btn forgot" type="button">'+t('drill.forgot')+'</button><button class="drill-btn knew" type="button">'+t('drill.knew')+'</button></div></div>';
+document.getElementById('drillReveal').addEventListener('click',function(){let tw=document.getElementById('drillTrans');tw.classList.toggle('show');this.textContent=tw.classList.contains('show')?t('drill.hide'):t('drill.reveal')});
+let btns=el.querySelectorAll('.drill-btn');
+btns.forEach(b=>b.addEventListener('click',function(){
+let knew=this.classList.contains('knew');
+trackWordResult(drillWords[drillIdx].phrase,currentCourse,knew);
+try{recordSRS(courses[currentCourse].id,drillWords[drillIdx].phrase,knew?5:2)}catch(err){}
+if(knew)drillKnew++;
+drillIdx++;
+if(drillIdx>=drillWords.length)recordActivity();
+renderDrillHome();
+}));
 }
 
 // ===== INIT =====
