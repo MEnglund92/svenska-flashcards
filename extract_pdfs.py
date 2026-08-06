@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
-"""extract_pdfs.py — Extract text from the text-layer PDFs in Sources/ into books_extracted.json.
+"""extract_pdfs.py — Extract text from the text-layer PDFs in Sources/Extractable into books_extracted.json.
 
-Uses PDF bookmarks as chapter boundaries when present; otherwise groups pages.
+Uses PDF bookmarks as chapter boundaries when present; otherwise groups pages (12-page "Del N" chunks).
 Appends to books_extracted.json (same shape as extract_epubs.py output, source: "pdf").
 Local-only file (gitignored) — extracted texts are copyrighted material.
 """
 import datetime
-import glob
 import json
 import os
 import re
@@ -15,17 +14,38 @@ import unicodedata
 import fitz
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
-SOURCES = os.path.join(ROOT, 'Sources')
+SOURCES = os.path.join(ROOT, 'Sources', 'Extractable')
 OUT = os.path.join(ROOT, 'books_extracted.json')
 
 PDFS = [
-    'Pa svenska 2',
-    'Rivstart  svenska som frammande sprak. B1 + B2, Ovningsbok',
-    'Svenska skrivregler for punktskrift',
+    {'needle': 'Pa svenska 2',
+     'title': 'På svenska 2 – Lärobok (B1)', 'author': 'Ulla Göransson, Annika Helander, Mai Parada',
+     'id': 'pa-svenska-2-larobok'},
+    {'needle': 'Rivstart  svenska som frammande sprak. B1 + B2, Ovningsbok',
+     'title': 'Rivstart B1 + B2 – Övningsbok', 'author': 'Paula Levy Scherrer, Karl Lindemalm',
+     'id': 'rivstart-b1-b2-ovningar'},
+    {'needle': 'Svenska skrivregler for punktskrift',
+     'title': 'Svenska skrivregler för punktskrift', 'author': 'Punktskriftsnämnden, Språkrådet',
+     'id': 'skrivregler-punktskrift'},
+    # ---- A1-A2 batch ----
+    {'needle': 'Pa svenska Svenska som frammande sprak Ovningsbok',
+     'title': 'På svenska 1 – Övningsbok (A1-A2)', 'author': 'Ulla Göransson, Annika Helander, Mai Parada',
+     'id': 'pa-svenska-1-ovningar'},
+    {'needle': 'Rivstart A1 + A2 svenska som frammande sprak textbok',
+     'title': 'Rivstart A1 + A2 – Textbok', 'author': 'Paula Levy Scherrer, Karl Lindemalm',
+     'id': 'rivstart-a1-a2-textbok'},
+    {'needle': 'Rivstart svenska som frammande sprak. [1, 2], A1 + A2 Ovningsbok',
+     'title': 'Rivstart A1 + A2 – Övningsbok', 'author': 'Paula Levy Scherrer, Karl Lindemalm',
+     'id': 'rivstart-a1-a2-ovningar'},
+    {'needle': 'Bygg upp ert',
+     'title': 'Bygg upp ert ordförråd med roliga övningar och enkla prov', 'author': 'Agneta Hebbe',
+     'id': 'bygg-upp-ert-ordforrad'},
 ]
 
 SKIP_LINE = re.compile(r'^\s*(\d+\s*|\.+\s*)?$')
 PAGE_NUM = re.compile(r'^\s*(?:s\.?\s*)?\d+\s*$')
+JUNK_BOOKMARK = re.compile(r'^\d+\.pdf\s*\(p\.\d+\)$', re.I)
+WORD3 = re.compile(r'[a-zåäö]{3,}')
 
 
 def norm(s):
@@ -41,12 +61,23 @@ def slug(s):
     return s or 'book'
 
 
+def is_junk_line(ln):
+    """Drop OCR noise lines (e.g. 'mm Om 00 Om 5 0 0 1 1', '0', page furniture)."""
+    if not ln:
+        return True
+    if PAGE_NUM.match(ln) or SKIP_LINE.match(ln):
+        return True
+    if len(ln) <= 2:
+        return True
+    return not WORD3.search(ln.lower())
+
+
 def reconstruct(blocks_text):
-    """Turn page text (lines) into paragraphs."""
+    """Turn page text (lines) into paragraphs, filtering OCR junk lines."""
     lines = [l.strip() for l in blocks_text.split('\n')]
     paras, cur = [], []
     for ln in lines:
-        if not ln or PAGE_NUM.match(ln):
+        if is_junk_line(ln):
             if cur:
                 paras.append(' '.join(cur))
                 cur = []
@@ -64,10 +95,10 @@ def extract_pdf(path):
     doc = fitz.open(path)
     toc = doc.get_toc()
     ranges = []
-    if len(toc) >= 3:
-        entries = [e for e in toc if e[0] <= 2]
-        for i, (lvl, title, page) in enumerate(entries):
-            end = entries[i + 1][2] - 1 if i + 1 < len(entries) else doc.page_count
+    good = [e for e in toc if e[0] <= 2 and not JUNK_BOOKMARK.match(e[1])]
+    if len(good) >= 3:
+        for i, (lvl, title, page) in enumerate(good):
+            end = good[i + 1][2] - 1 if i + 1 < len(good) else doc.page_count
             ranges.append((title, page - 1, end))
     else:
         step = 12
@@ -93,18 +124,25 @@ def extract_pdf(path):
     }
 
 
+def all_pdfs():
+    for dp, _d, fs in os.walk(SOURCES):
+        for fn in fs:
+            if fn.lower().endswith('.pdf'):
+                yield os.path.join(dp, fn)
+
+
 def main():
     if os.path.exists(OUT):
         data = json.load(open(OUT, encoding='utf-8'))
     else:
         data = {'generated': '', 'books': []}
     known = {b['id'] for b in data['books']}
+    by_name = {norm(os.path.basename(p).split('(')[0]): p for p in all_pdfs()}
     done = 0
-    for needle in PDFS:
-        matches = [p for p in glob.glob(os.path.join(SOURCES, '*.pdf'))
-                   if norm(needle) in norm(os.path.basename(p).split('(')[0])]
+    for spec in PDFS:
+        matches = [p for n, p in by_name.items() if norm(spec['needle']) in n]
         if not matches:
-            print('no match for:', needle)
+            print('no match for:', spec['needle'])
             continue
         p = matches[0]
         try:
@@ -112,11 +150,14 @@ def main():
         except Exception as e:
             print('SKIP %s (%s)' % (os.path.basename(p), e))
             continue
+        b['id'] = spec['id']
+        b['title'] = spec['title']
+        b['author'] = spec['author']
         if b['id'] in known:
             print('already present:', b['id'])
             continue
         chs = b['chapters']
-        print('%-45s %4d ch %9d chars' % (b['title'][:45], len(chs), sum(len(c['text']) for c in chs)))
+        print('%-42s %4d ch %9d chars' % (b['title'][:42], len(chs), sum(len(c['text']) for c in chs)))
         data['books'].append(b)
         known.add(b['id'])
         done += 1

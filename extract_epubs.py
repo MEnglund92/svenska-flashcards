@@ -23,7 +23,7 @@ import ebooklib
 from ebooklib import epub
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
-SOURCES = os.path.join(ROOT, 'Sources')
+SOURCES = os.path.join(ROOT, 'Sources', 'Extractable')
 OUT = os.path.join(ROOT, 'books_extracted.json')
 
 HEADING_TAGS = ['h1', 'h2', 'h3', 'h4']
@@ -183,8 +183,15 @@ def extract_epub(path):
     }
 
 
+def find_epubs(root):
+    for dp, _d, fs in os.walk(root):
+        for fn in sorted(fs):
+            if fn.lower().endswith('.epub'):
+                yield os.path.join(dp, fn)
+
+
 def main():
-    epubs = sorted(glob.glob(os.path.join(SOURCES, '*.epub')))
+    epubs = list(find_epubs(SOURCES))
     if not epubs:
         raise SystemExit('No EPUB files found in ' + SOURCES)
     books = []
