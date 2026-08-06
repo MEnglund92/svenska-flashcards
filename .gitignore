@@ -3,6 +3,7 @@ Sources/
 data_*.json
 *_checkpoint.json
 novels_reading.json
+books_extracted.json
 vocab_translations.json
 svensk_ordbok_page51.txt
 __concepts_block.js

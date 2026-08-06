@@ -3120,13 +3120,13 @@ let vocab=c.vocab||[];
 let prog=readProgress(book.id);
 let pct=prog[readChapter];
 let qs=c.questions||[];
-root.innerHTML='<div class="read-topbar"><button class="diff-btn active" id="readBackCh">'+t('read.back')+'</button><button class="quiz-trans-btn" id="readQuizBtn">'+t('read.startQuiz')+'</button>'+(pct?'<span style="font-size:0.8rem;color:var(--success)">'+t('read.best',{pct:pct})+'</span>':'')+'</div><h2 style="font-family:var(--font-serif);margin:6px 0 14px">'+esc(c.title)+'</h2>'+paras.map(p=>'<p class="read-para">'+makeSpeaker(p,'sv-SE')+'<span>'+esc(p)+'</span></p>').join('')+(vocab.length?'<div class="read-vocab-wrap"><div class="read-vocab-title">'+t('read.vocab',{n:vocab.length})+'</div><div style="font-size:0.72rem;color:var(--text-tertiary);margin-bottom:8px">'+t('read.vocabHint')+'</div><div class="read-vocab-chips">'+vocab.map((v,vi)=>{
+root.innerHTML='<div class="read-topbar"><button class="diff-btn active" id="readBackCh">'+t('read.back')+'</button>'+(qs.length?'<button class="quiz-trans-btn" id="readQuizBtn">'+t('read.startQuiz')+'</button>':'')+(pct?'<span style="font-size:0.8rem;color:var(--success)">'+t('read.best',{pct:pct})+'</span>':'')+'</div><h2 style="font-family:var(--font-serif);margin:6px 0 14px">'+esc(c.title)+'</h2>'+paras.map(p=>'<p class="read-para">'+makeSpeaker(p,'sv-SE')+'<span>'+esc(p)+'</span></p>').join('')+(vocab.length?'<div class="read-vocab-wrap"><div class="read-vocab-title">'+t('read.vocab',{n:vocab.length})+'</div><div style="font-size:0.72rem;color:var(--text-tertiary);margin-bottom:8px">'+t('read.vocabHint')+'</div><div class="read-vocab-chips">'+vocab.map((v,vi)=>{
 let posTag=v.pos&&v.pos!=='?'?' <span class="read-pos">'+esc(v.pos)+'</span>':'';
 return '<span class="read-vocab-chip" data-vi="'+vi+'">'+makeSpeaker(v.w,'sv-SE')+esc(v.w)+posTag+'<span class="read-vocab-tip">'+esc(v.trans||'')+'</span></span>'
-}).join('')+'</div></div>':'')+'<div style="margin:18px 0 40px"><button class="quiz-next" id="readQuizBtn2">'+t('read.startQuiz')+' ('+qs.length+')</button></div>';
+}).join('')+'</div></div>':'')+(qs.length?'<div style="margin:18px 0 40px"><button class="quiz-next" id="readQuizBtn2">'+t('read.startQuiz')+' ('+qs.length+')</button></div>':'');
 document.getElementById('readBackCh').addEventListener('click',function(){readChapter=-1;readQuizStarted=false;renderRead()});
-document.getElementById('readQuizBtn').addEventListener('click',startReadQuiz);
-document.getElementById('readQuizBtn2').addEventListener('click',startReadQuiz);
+var readQuizBtn1=document.getElementById('readQuizBtn');if(readQuizBtn1)readQuizBtn1.addEventListener('click',startReadQuiz);
+var readQuizBtn2=document.getElementById('readQuizBtn2');if(readQuizBtn2)readQuizBtn2.addEventListener('click',startReadQuiz);
 root.querySelectorAll('.read-vocab-chip').forEach(chip=>{chip.addEventListener('click',function(){this.classList.toggle('show')});let spk=chip.querySelector('.speaker-btn');if(spk)spk.addEventListener('click',function(e){e.stopPropagation()})});
 }
 function startReadQuiz(){readQuizStarted=true;readQuizIdx=0;readQuizScore=0;readQuizAnswered=false;readQuizMistakes=[];renderRead()}
