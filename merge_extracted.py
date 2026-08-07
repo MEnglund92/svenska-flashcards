@@ -77,24 +77,32 @@ def main():
             novels_by_id[eb['id']] = old
             print('REPLACED %-42s (%d chapters)' % (eb['title'][:42], len(eb['chapters'])))
             continue
-        # 2) enrich existing novels by title
+        # 2) enrich existing novels by title. Exact title match always wins; a
+        #    substring match only counts as the same book if chapter texts
+        #    actually match or the id is already known — otherwise a new book
+        #    like "Svenska skrivregler" would be swallowed by the substring
+        #    collision with "Svenska skrivregler för punktskrift".
         novel = None
-        for t, b in novels_by_title.items():
-            if en and (en in t or t in en):
-                novel = b
-                break
-        if novel is not None:
-            old = novel['chapters']
+        replaced = 0
+        candidates = [b for t, b in novels_by_title.items() if en and (en in t or t in en)]
+        cand = None
+        if candidates:
+            exact = [b for b in candidates if norm(b['title']) == en]
+            cand = exact[0] if exact else candidates[0]
+        if cand is not None:
+            old = cand['chapters']
             old_keys = [clean_key(c['title']) for c in old]
-            replaced = 0
             for ec in eb['chapters']:
                 idx = match_title(ec['title'], old_keys)
                 if idx is not None:
                     old[idx]['text'] = ec['text']
                     replaced += 1
+            if norm(cand['title']) == en or replaced > 0 or eb['id'] in novels_by_id:
+                novel = cand
+        if novel is not None:
             for i, c in enumerate(old):
                 c['n'] = i + 1
-            print('ENRICHED %-40s replaced %3d chapter texts' % (eb['title'][:40], replaced))
+            print('ENRICHED %-40s replaced %3d chapter texts' % (novel['title'][:40], replaced))
             continue
         # 3) append as new book
         if any(b['id'] == eb['id'] for b in novels['novels']):

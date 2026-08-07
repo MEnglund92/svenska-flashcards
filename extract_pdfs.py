@@ -40,6 +40,16 @@ PDFS = [
     {'needle': 'Bygg upp ert',
      'title': 'Bygg upp ert ordförråd med roliga övningar och enkla prov', 'author': 'Agneta Hebbe',
      'id': 'bygg-upp-ert-ordforrad'},
+    # ---- C1-C2 batch ----
+    {'needle': 'Svenska impulser 3',
+     'title': 'Svenska impulser 3', 'author': 'Carl-Johan Markstedt, Sven Eriksson',
+     'id': 'svenska-impulser-3'},
+    {'needle': 'Svenska skrivregler', 'exact': True, 'toc_levels': 1,
+     'title': 'Svenska skrivregler', 'author': 'Ola Karlsson',
+     'id': 'svenska-skrivregler'},
+    {'needle': 'Uppsatshandboken',
+     'title': 'Uppsatshandboken', 'author': 'Siv Strömquist',
+     'id': 'uppsatshandboken'},
 ]
 
 SKIP_LINE = re.compile(r'^\s*(\d+\s*|\.+\s*)?$')
@@ -91,12 +101,26 @@ def reconstruct(blocks_text):
     return '\n\n'.join(p for p in paras if p)
 
 
-def extract_pdf(path):
+def toc_is_junk(good):
+    """Detect z-library style TOCs whose level-1 titles are only numbers or pdf filenames."""
+    if len(good) < 3:
+        return True
+    l1 = [e for e in good if e[0] == 1]
+    if not l1:
+        return False
+    junk = sum(1 for e in l1
+               if re.match(r'^\d+$', e[1].strip())
+               or e[1].lower().endswith('.pdf')
+               or e[1].lower().startswith('pages from '))
+    return junk / len(l1) >= 0.5
+
+
+def extract_pdf(path, toc_levels=2):
     doc = fitz.open(path)
     toc = doc.get_toc()
     ranges = []
-    good = [e for e in toc if e[0] <= 2 and not JUNK_BOOKMARK.match(e[1])]
-    if len(good) >= 3:
+    good = [e for e in toc if e[0] <= toc_levels and not JUNK_BOOKMARK.match(e[1])]
+    if len(good) >= 3 and not toc_is_junk(good):
         for i, (lvl, title, page) in enumerate(good):
             end = good[i + 1][2] - 1 if i + 1 < len(good) else doc.page_count
             ranges.append((title, page - 1, end))
@@ -140,13 +164,16 @@ def main():
     by_name = {norm(os.path.basename(p).split('(')[0]): p for p in all_pdfs()}
     done = 0
     for spec in PDFS:
-        matches = [p for n, p in by_name.items() if norm(spec['needle']) in n]
+        if spec.get('exact'):
+            matches = [p for n, p in by_name.items() if n == norm(spec['needle'])]
+        else:
+            matches = [p for n, p in by_name.items() if norm(spec['needle']) in n]
         if not matches:
             print('no match for:', spec['needle'])
             continue
         p = matches[0]
         try:
-            b = extract_pdf(p)
+            b = extract_pdf(p, toc_levels=spec.get('toc_levels', 2))
         except Exception as e:
             print('SKIP %s (%s)' % (os.path.basename(p), e))
             continue
