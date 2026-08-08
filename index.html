@@ -967,8 +967,11 @@ body{padding-left:env(safe-area-inset-left);padding-right:env(safe-area-inset-ri
 
 </div>
 <script src="data.js"></script>
+<script src="data_deck.js"></script>
 <script>
 try{
+// merge generated flashcard deck into the app's courses.
+if(typeof deckCourses!=='undefined'&&Array.isArray(deckCourses)){courses.push.apply(courses,deckCourses);}
 // ===== I18N SYSTEM =====
 const langStrings={sv:{
 'app.title':'Svenska — Lär dig svenska',
@@ -2063,7 +2066,7 @@ for(let c of courses){let s=all[c.id];if(!s)continue;quizTotal+=s.quiz.taken||0;
 let sd=loadStreak();
 let stats=[
 {v:courses.length,l:t('home.statCourses')},
-{v:totalWords,l:t('home.statWords')},
+ {v:totalWords.toLocaleString('sv-SE'),l:t('home.statWords')},
 {v:sd.current+(sd.current>0?' \u{1F525}':''),l:t('home.statStreak')},
 {v:quizTotal,l:t('home.statQuizzes')},
 {v:examTotal,l:t('home.statExams')},
@@ -2295,7 +2298,8 @@ let w=ws[e.phrase];if(!w||w.correct+w.incorrect<3||w.incorrect/(w.correct+w.inco
 if(q&&!e.phrase.toLowerCase().includes(q)&&!e.meaning.toLowerCase().includes(q)&&!e.translation.toLowerCase().includes(q))return false;
 return true;
 });
-document.getElementById('browseCount').textContent=t('browse.showing',{n:filtered.length,total:d.length});
+ if(filtered.length>500){document.getElementById('browseCount').textContent=t('browse.showing',{n:500,total:d.length})+' ('+(filtered.length-500)+' fler visas vid filtrering)';filtered=filtered.slice(0,500)}
+ else{document.getElementById('browseCount').textContent=t('browse.showing',{n:filtered.length,total:d.length})}
 let grid=document.getElementById('browseGrid');
 if(filtered.length===0){grid.innerHTML='<div class="empty-state"><div class="icon">\u{1F4ED}</div><p>'+t('browse.empty')+'</p></div>';return}
 grid.innerHTML=filtered.map(e=>{
