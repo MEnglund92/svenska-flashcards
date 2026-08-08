@@ -116,8 +116,9 @@ def clean_phrase(p):
     return re.sub(r'\s+', ' ', p)
 
 
-def build_spacy_vocab():
-    """Proper Swedish token set + fold(index) from spaCy sv model; None if unavailable."""
+def build_spacy_vocab(lex):
+    """Proper Swedish token set + fold index from spaCy sv model; falls back to a
+    fold index built from `lex` when the model (or spacy) is unavailable."""
     try:
         import spacy
         nlp = spacy.load('sv_core_news_sm')
@@ -127,7 +128,10 @@ def build_spacy_vocab():
             fold_index.setdefault(w.translate(FOLD), []).append(w)
         return vocab, fold_index
     except Exception:
-        return None, None
+        fold_index = {}
+        for w in lex:
+            fold_index.setdefault(w.translate(FOLD), []).append(w)
+        return None, fold_index
 
 
 def build_lexicon():
@@ -180,13 +184,11 @@ def repair_diacritics(text, lex, vocab, fold_index):
             if key in vocab:
                 out.append(tok)
                 continue
-            cands = fold_index.get(key.translate(FOLD), [])
         else:
             if key in lex:
                 out.append(tok)
                 continue
-            cands = [w for w in lex
-                     if w.translate(FOLD) == key.translate(FOLD) and w != key]
+        cands = fold_index.get(key.translate(FOLD), [])
         cands = sorted(set(cands))
         if len(cands) == 1:
             cand = cands[0]
@@ -202,7 +204,7 @@ def main():
     import sys
     sys.stdout.reconfigure(line_buffering=True)
     lex = build_lexicon()
-    vocab, fold_index = build_spacy_vocab()
+    vocab, fold_index = build_spacy_vocab(lex)
     print('lexicon:', len(lex), '| spaCy vocab:', len(vocab or []), flush=True)
     vt = {}
     try:
@@ -265,28 +267,26 @@ def main():
             p = repair_diacritics(e['phrase'], lex, vocab, fold_index)
             if not clean_phrase(p):
                 continue
+            meaning = repair_diacritics(e['meaning'], lex, vocab, fold_index) if e['meaning'] else ''
+            sentence = e['sentence']
+            translation = e['translation']
+            if not translation:
+                translation = vt.get(p.lower(), '')
+                if not translation:
+                    translation = vt.get(repair_diacritics(e['phrase'].lower(), lex, vocab, fold_index), '')
+            if not meaning:
+                meaning = translation or '—'
             key = p.lower()
-            score = (bool(e['translation']), bool(e['sentence']), e['conf'])
+            score = (bool(translation), bool(sentence), e['conf'])
+            norm = {'phrase': p, 'meaning': meaning, 'sentence': sentence,
+                    'translation': translation, 'score': score, 'gid': gid}
             if key in seen:
                 old = seen[key]
                 if score > old['score']:
-                    old.update({'phrase': p, 'meaning': e['meaning'],
-                                'sentence': e['sentence'],
-                                'translation': e['translation'],
-                                'score': score})
+                    old.update(norm)
                 continue
-            if not e['translation']:
-                e['translation'] = vt.get(p.lower(), '')
-                if not e['translation']:
-                    e['translation'] = vt.get(
-                        repair_diacritics(e['phrase'].lower(), lex, vocab, fold_index), '')
-            if not e['meaning']:
-                e['meaning'] = e['translation'] or '—'
-            seen[key] = {'phrase': p, 'meaning': e['meaning'],
-                         'sentence': e['sentence'],
-                         'translation': e['translation'], 'score': score,
-                         'gid': gid}
-            course_entries.append(e)
+            seen[key] = norm
+            course_entries.append(norm)
         stats['%s kept' % gid] = len(course_entries)
         stats['%s translated' % gid] = sum(
             1 for e in course_entries if e['translation'])
