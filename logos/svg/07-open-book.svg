@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" font-family="Georgia, 'Times New Roman', serif">
+<defs><filter id="g" x="-60%" y="-60%" width="220%" height="220%">
+    <feDropShadow dx="0" dy="0" stdDeviation="10" flood-color="#7dd3fc" flood-opacity="0.5"/>
+  </filter><filter id="g2" x="-60%" y="-60%" width="220%" height="220%">
+    <feDropShadow dx="0" dy="0" stdDeviation="10" flood-color="#a78bfa" flood-opacity="0.5"/>
+  </filter><filter id="gg" x="-60%" y="-60%" width="220%" height="220%">
+    <feDropShadow dx="0" dy="0" stdDeviation="10" flood-color="#f7c948" flood-opacity="0.5"/>
+  </filter></defs>
+<rect width="512" height="512" fill="#050508"/>
+<circle cx="256" cy="300" r="240" fill="rgba(125,211,252,0.045)"/>
+<circle cx="256" cy="300" r="180" fill="rgba(125,211,252,0.05)"/>
+
+  <path d="M256 310 L256 190 C206 152 148 158 116 194 L116 296 C156 272 214 282 256 310 Z" fill="#7dd3fc" opacity="0.92"/>
+  <path d="M256 310 L256 190 C306 152 364 158 396 194 L396 296 C356 272 298 282 256 310 Z" fill="#a78bfa" opacity="0.85"/>
+  <path d="M150 225 L210 225 M150 252 L210 252 M150 279 L195 279" stroke="#050508" stroke-width="8" stroke-linecap="round"/>
+  <path d="M300 225 L360 225 M300 252 L360 252" stroke="#050508" stroke-width="8" stroke-linecap="round"/>
+
+
+  <g>
+    <rect x="32.32" y="32.32" width="79.36" height="79.36" rx="14.08"
+      fill="rgba(125,211,252,0.10)" stroke="rgba(125,211,252,0.35)" stroke-width="2"/>
+    <path d="M50.24 60.480000000000004 H93.75999999999999 M93.75999999999999 60.480000000000004 L50.24 83.52000000000001 H93.75999999999999"
+      fill="none" stroke="#7dd3fc" stroke-width="14.08" stroke-linecap="butt" stroke-linejoin="miter"/>
+  </g>
+</svg>

@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" font-family="Georgia, 'Times New Roman', serif">
+<defs><filter id="g" x="-60%" y="-60%" width="220%" height="220%">
+    <feDropShadow dx="0" dy="0" stdDeviation="10" flood-color="#7dd3fc" flood-opacity="0.5"/>
+  </filter><filter id="g2" x="-60%" y="-60%" width="220%" height="220%">
+    <feDropShadow dx="0" dy="0" stdDeviation="10" flood-color="#a78bfa" flood-opacity="0.5"/>
+  </filter><filter id="gg" x="-60%" y="-60%" width="220%" height="220%">
+    <feDropShadow dx="0" dy="0" stdDeviation="10" flood-color="#f7c948" flood-opacity="0.5"/>
+  </filter></defs>
+<rect width="512" height="512" fill="#050508"/>
+<circle cx="256" cy="300" r="240" fill="rgba(125,211,252,0.045)"/>
+<circle cx="256" cy="300" r="180" fill="rgba(125,211,252,0.05)"/>
+
+  <path fill="#7dd3fc" filter="url(#g)"
+    d="M120 185
+       C120 155 140 138 176 134
+       C206 131 228 138 236 158
+       C244 132 268 126 282 134
+       C290 139 288 152 274 157
+       C266 160 258 158 254 166
+       C250 174 254 182 250 190
+       C240 202 226 208 214 216
+       L210 244 L196 244 L196 220
+       C184 226 172 228 162 222
+       L160 248 L146 248 L148 216
+       C134 210 124 200 124 188
+       Z
+       M214 130 L216 110 L224 122 L222 108 L230 118 L230 100 L236 114 L240 102 L240 120 Z"/>
+  <circle cx="244" cy="146" r="4" fill="#050508"/>
+  <rect x="136" y="248" width="120" height="6" rx="3" fill="rgba(125,211,252,0.4)"/>
+
+
+  <g>
+    <rect x="32.32" y="32.32" width="79.36" height="79.36" rx="14.08"
+      fill="rgba(125,211,252,0.10)" stroke="rgba(125,211,252,0.35)" stroke-width="2"/>
+    <path d="M50.24 60.480000000000004 H93.75999999999999 M93.75999999999999 60.480000000000004 L50.24 83.52000000000001 H93.75999999999999"
+      fill="none" stroke="#7dd3fc" stroke-width="14.08" stroke-linecap="butt" stroke-linejoin="miter"/>
+  </g>
+</svg>

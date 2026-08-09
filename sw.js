@@ -1,4 +1,4 @@
-const CACHE = 'svenska-v17';
+const CACHE = 'svenska-v18';
 const FILES = ['.','index.html','data.js','data_deck.js','manifest.json','novels_reading.json','icons/icon-192.png','icons/icon-512.png'];
 
 self.addEventListener('install', e => {

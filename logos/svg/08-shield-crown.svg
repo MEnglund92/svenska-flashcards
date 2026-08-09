@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" font-family="Georgia, 'Times New Roman', serif">
+<defs><filter id="g" x="-60%" y="-60%" width="220%" height="220%">
+    <feDropShadow dx="0" dy="0" stdDeviation="10" flood-color="#7dd3fc" flood-opacity="0.5"/>
+  </filter><filter id="g2" x="-60%" y="-60%" width="220%" height="220%">
+    <feDropShadow dx="0" dy="0" stdDeviation="10" flood-color="#a78bfa" flood-opacity="0.5"/>
+  </filter><filter id="gg" x="-60%" y="-60%" width="220%" height="220%">
+    <feDropShadow dx="0" dy="0" stdDeviation="10" flood-color="#f7c948" flood-opacity="0.5"/>
+  </filter></defs>
+<rect width="512" height="512" fill="#050508"/>
+<circle cx="256" cy="300" r="240" fill="rgba(125,211,252,0.045)"/>
+<circle cx="256" cy="300" r="180" fill="rgba(125,211,252,0.05)"/>
+
+  <path d="M256 138 L356 178 L356 278 C356 342 322 382 256 402 C190 382 156 342 156 278 L156 178 Z"
+    fill="#7dd3fc" opacity="0.92" filter="url(#g)"/>
+  <path d="M226 128 L234 92 L250 112 L258 84 L266 112 L282 92 L290 128 L226 128 Z" fill="#f7c948"/>
+  <rect x="222" y="128" width="72" height="16" rx="4" fill="#f7c948"/>
+  <path d="M256 196 L300 214 L300 258 C300 296 284 318 256 330 C228 318 212 296 212 258 L212 214 Z" fill="#050508" opacity="0.85"/>
+
+
+  <g>
+    <rect x="32.32" y="32.32" width="79.36" height="79.36" rx="14.08"
+      fill="rgba(125,211,252,0.10)" stroke="rgba(125,211,252,0.35)" stroke-width="2"/>
+    <path d="M50.24 60.480000000000004 H93.75999999999999 M93.75999999999999 60.480000000000004 L50.24 83.52000000000001 H93.75999999999999"
+      fill="none" stroke="#7dd3fc" stroke-width="14.08" stroke-linecap="butt" stroke-linejoin="miter"/>
+  </g>
+</svg>
