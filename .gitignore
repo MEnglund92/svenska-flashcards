@@ -18,3 +18,7 @@ __pycache__/
 *.log
 *_err.txt
 *_log.txt
+index.html.pre-enui
+
+# Scratch / working drafts
+concept.html

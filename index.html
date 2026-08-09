@@ -2494,7 +2494,7 @@ let stats=[
 {v:examTotal,l:t('home.statExams')},
 {v:best?best+'%':'\u2014',l:t('home.statBest')}
 ];
-let statHtml=stats.map(s=>'<div class="stat-card"><div class="stat-num">'+s.v+'</div><div class="stat-lbl">'+s.l+'</div>'+(s.sub?'<div class="stat-sub">'+s.sub+'</div>':'')).join('');
+let statHtml=stats.map(s=>'<div class="stat-card"><div class="stat-num">'+s.v+'</div><div class="stat-lbl">'+s.l+'</div>'+(s.sub?'<div class="stat-sub">'+s.sub+'</div>':'')+'</div>').join('');
 let qa=[
 {tab:'flash',icon:'\u{1F0CF}',l:t('home.qaFlash')},
 {tab:'quiz',icon:'\u{1F3AF}',l:t('home.qaQuiz')},
