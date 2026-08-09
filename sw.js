@@ -1,4 +1,4 @@
-const CACHE = 'svenska-v16';
+const CACHE = 'svenska-v17';
 const FILES = ['.','index.html','data.js','data_deck.js','manifest.json','novels_reading.json','icons/icon-192.png','icons/icon-512.png'];
 
 self.addEventListener('install', e => {
@@ -16,9 +16,23 @@ self.addEventListener('fetch', e => {
   if(e.request.url.includes('/tts?'))return e.respondWith(fetch(e.request));
   const u = e.request.url;
   const p = new URL(u).pathname;
+
+  if (e.request.mode === 'navigate' || p.endsWith('/index.html') || p === '/') {
+    return e.respondWith(
+      fetch(e.request).then(resp => {
+        if (resp && resp.status === 200) {
+          const clone = resp.clone();
+          caches.open(CACHE).then(c => c.put(u, clone));
+        }
+        return resp;
+      }).catch(() => caches.match(u).then(c => c || caches.match('/index.html')))
+    );
+  }
+
   if (p.endsWith('/data_deck.js') || p.endsWith('/novels_reading.json')) {
     return e.respondWith(fetch(e.request).catch(() => caches.match(u)));
   }
+
   e.respondWith(
     caches.match(e.request).then(cached => {
       if (cached) return cached;
