@@ -21,7 +21,7 @@ try{
 <link rel="apple-touch-icon" href="icons/icon-180.png">
 <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
 <link rel="manifest" href="manifest.json">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="fonts/fonts.css">
 <style>
 *{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -981,6 +981,7 @@ body{padding-left:env(safe-area-inset-left);padding-right:env(safe-area-inset-ri
   <div class="main-controls">
     <span class="streak-pill" title="Dagstreak">🔥<span id="headerStreak">0</span></span>
     <button class="course-pill js-theme-toggle" id="headerThemeToggle" title="Tema">☾</button>
+    <button class="course-pill" id="installBtn" title="Installera som app" aria-label="Installera som app" style="display:none">⬇️</button>
   </div>
 </div>
 
@@ -2223,12 +2224,117 @@ function detectSTT(){
 const C=window.SpeechRecognition||window.webkitSpeechRecognition;
 return C||null;
 }
-function startSTT(phrase,courseId,micBtn,callback){
-const C=detectSTT();
-if(!C){
+function sttFeedback(micBtn){
 let fb=micBtn.parentElement.querySelector('.mic-feedback');
 if(!fb){fb=document.createElement('div');fb.className='mic-feedback';micBtn.parentElement.appendChild(fb)}
-    fb.textContent=t('stt.notSupported');fb.className='mic-feedback wrong';
+return fb;
+}
+function compareSpoken(recognized,phrase){
+let r=(recognized||'').trim().toLowerCase();
+let e=(phrase||'').trim().toLowerCase();
+return !!r&&(r===e||r.includes(e)||e.includes(r));
+}
+function sttVerdict(recognized,phrase,courseId,micBtn,callback){
+let fb=sttFeedback(micBtn);
+let isCorrect=compareSpoken(recognized,phrase);
+fb.textContent=isCorrect?t('stt.correct')+recognized:t('stt.tryAgain')+recognized;
+fb.className='mic-feedback '+(isCorrect?'correct':'wrong');
+if(isCorrect&&callback)callback();
+if(courseId>=0)trackWordResult(phrase,courseId,isCorrect);
+}
+function startSTT(phrase,courseId,micBtn,callback){
+if(!window.__STATIC_HOST)serverSTT(phrase,courseId,micBtn,callback||function(){});
+else webkitSTT(phrase,courseId,micBtn,callback||function(){});
+}
+function serverSTT(phrase,courseId,micBtn,callback){
+const fb=sttFeedback(micBtn);
+fb.textContent=t('stt.listening');fb.className='mic-feedback';
+micBtn.classList.add('listening');
+let ctx=null,stream=null,source=null,proc=null,mute=null,chunks=[],started=Date.now(),silentFrom=null,silenceTimer=null;
+const MAX_MS=6000,SIL_MS=1400,THRESH=0.004;
+function fail(msg){
+micBtn.classList.remove('listening');
+fb.textContent=msg||t('stt.failed');fb.className='mic-feedback wrong';
+}
+function cleanup(){
+micBtn.classList.remove('listening');
+clearTimeout(silenceTimer);
+try{proc&&proc.ondisconnect&&proc.ondisconnect()}catch(e){}
+try{if(proc)proc.disconnect()}catch(e){}
+try{if(source)source.disconnect()}catch(e){}
+try{if(mute)mute.disconnect()}catch(e){}
+try{if(ctx)ctx.close()}catch(e){}
+try{if(stream)stream.getTracks().forEach(function(t){t.stop()})}catch(e){}
+}
+function sendWav(){
+const total=chunks.reduce(function(n,c){return n+c.length},0);
+if(total<8000){cleanup();fail(t('stt.noSpeech'));return;}
+try{
+const sr=ctx.sampleRate;
+let buf=ctx.createBuffer(1,total,sr);
+let ch=buf.getChannelData(0);
+let off=0;
+for(let i=0;i<chunks.length;i++){ch.set(chunks[i],off);off+=chunks[i].length;}
+const oc=new OfflineAudioContext(1,Math.max(1,Math.round(total*16000/sr)),16000);
+const src=oc.createBufferSource();src.buffer=buf;src.connect(oc.destination);src.start();
+oc.startRendering().then(function(rendered){
+const data=rendered.getChannelData(0);
+const pcm=new Int16Array(data.length);
+for(let i=0;i<data.length;i++){let s=data[i];s=Math.max(-1,Math.min(1,s));pcm[i]=s<0?s*0x8000:s*0x7FFF;}
+const hdr=new ArrayBuffer(44);const dv=new DataView(hdr);
+const ws=function(o,s){for(let i=0;i<s.length;i++)dv.setUint8(o+i,s.charCodeAt(i))};
+ws(0,'RIFF');dv.setUint32(4,36+pcm.length*2,true);ws(8,'WAVE');ws(12,'fmt ');
+dv.setUint32(16,16,true);dv.setUint16(20,1,true);dv.setUint16(22,1,true);
+dv.setUint32(24,16000,true);dv.setUint32(28,32000,true);dv.setUint16(32,2,true);dv.setUint16(34,16,true);
+ws(36,'data');dv.setUint32(40,pcm.length*2,true);
+const wav=new Blob([hdr,pcm.buffer],{type:'audio/wav'});
+cleanup();
+fetch('/stt?lang=sv&expected='+encodeURIComponent(phrase||''),{method:'POST',body:wav})
+.then(function(r){return r.json()}).then(function(j){
+if(j&&j.ok&&j.text)sttVerdict(String(j.text),phrase,courseId,micBtn,callback);
+else if(detectSTT())webkitSTT(phrase,courseId,micBtn,callback);
+else fail(t('stt.failed'));
+}).catch(function(){if(detectSTT())webkitSTT(phrase,courseId,micBtn,callback);else fail(t('stt.failed'));});
+}).catch(function(){cleanup();if(detectSTT())webkitSTT(phrase,courseId,micBtn,callback);else fail(t('stt.failed'));});
+}catch(e){cleanup();if(detectSTT())webkitSTT(phrase,courseId,micBtn,callback);else fail(t('stt.failed'));}
+}
+function onAudio(ev){
+const data=ev.inputBuffer.getChannelData(0);
+chunks.push(new Float32Array(data));
+let rms=0;
+for(let i=0;i<data.length;i++)rms+=data[i]*data[i];
+rms=Math.sqrt(rms/data.length);
+if(rms<THRESH){
+if(silentFrom===null)silentFrom=Date.now();
+if(Date.now()-silentFrom>SIL_MS){sendWav();return;}
+}else silentFrom=null;
+if(Date.now()-started>MAX_MS)sendWav();
+}
+function start(){
+try{ctx=new (window.AudioContext||window.webkitAudioContext)()}catch(e){ctx=new AudioContext()}
+source=ctx.createMediaStreamSource(stream);
+proc=ctx.createScriptProcessor(4096,1,1);
+mute=ctx.createGain();mute.gain.value=0;
+source.connect(proc);proc.connect(mute);mute.connect(ctx.destination);
+proc.onaudioprocess=onAudio;
+silenceTimer=setTimeout(sendWav,MAX_MS+1200);
+}
+if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){if(detectSTT())webkitSTT(phrase,courseId,micBtn,callback);else fail(t('stt.notSupported'));return;}
+navigator.mediaDevices.getUserMedia({audio:{channelCount:1,echoCancellation:true,noiseSuppression:true}})
+.then(function(ms){
+stream=ms;
+try{start()}catch(e){cleanup();fail(t('stt.failed'));}
+}).catch(function(err){
+micBtn.classList.remove('listening');
+if(detectSTT())webkitSTT(phrase,courseId,micBtn,callback);
+else{fail(t('stt.error')+(err&&err.name||''));}
+});
+}
+function webkitSTT(phrase,courseId,micBtn,callback){
+const C=detectSTT();
+if(!C){
+let fb=sttFeedback(micBtn);
+fb.textContent=t('stt.notSupported');fb.className='mic-feedback wrong';
 setTimeout(()=>{fb.textContent='';fb.className='mic-feedback'},2000);
 return;
 }
@@ -2237,8 +2343,7 @@ rec.lang='sv-SE';rec.interimResults=false;rec.maxAlternatives=3;
 let timedOut=false;
 let tid=setTimeout(()=>{timedOut=true;rec.abort();},5000);
 micBtn.classList.add('listening');
-let fb=micBtn.parentElement.querySelector('.mic-feedback');
-if(!fb){fb=document.createElement('div');fb.className='mic-feedback';micBtn.parentElement.appendChild(fb)}
+let fb=sttFeedback(micBtn);
 fb.textContent=t('stt.listening');fb.className='mic-feedback';
 rec.onresult=function(ev){
 clearTimeout(tid);
@@ -2251,27 +2356,25 @@ break;
 }
 }
 if(!recognized&&ev.results.length>0)recognized=ev.results[0][0].transcript.trim().toLowerCase();
-let expected=phrase.toLowerCase().trim();
-let isCorrect=recognized===expected||recognized.includes(expected)||expected.includes(recognized);
-fb.textContent=isCorrect?t('stt.correct')+recognized:t('stt.tryAgain')+recognized;
-fb.className='mic-feedback '+(isCorrect?'correct':'wrong');
-if(isCorrect&&callback)callback();
-if(courseId>=0)trackWordResult(phrase,courseId,isCorrect);
+sttVerdict(recognized,phrase,courseId,micBtn,callback);
 };
 rec.onerror=function(ev){
 clearTimeout(tid);
 micBtn.classList.remove('listening');
-    fb.textContent=t('stt.error')+ev.error;fb.className='mic-feedback wrong';
+let fb2=sttFeedback(micBtn);
+fb2.textContent=t('stt.error')+ev.error;fb2.className='mic-feedback wrong';
 };
 rec.onend=function(){
 clearTimeout(tid);
 micBtn.classList.remove('listening');
-if(!fb.textContent)fb.textContent=t('stt.noSpeech');fb.className='mic-feedback wrong';
+let fb3=sttFeedback(micBtn);
+if(!fb3.textContent)fb3.textContent=t('stt.noSpeech');fb3.className='mic-feedback wrong';
 };
 try{rec.start()}catch(e){
 clearTimeout(tid);
 micBtn.classList.remove('listening');
-fb.textContent=t('stt.failed');fb.className='mic-feedback wrong';
+let fb4=sttFeedback(micBtn);
+fb4.textContent=t('stt.failed');fb4.className='mic-feedback wrong';
 }
 }
 
@@ -3846,6 +3949,24 @@ function checkStaticHost(){
   }
 }
 if('serviceWorker'in navigator)navigator.serviceWorker.register('sw.js').catch(function(){});
+// ===== PWA INSTALL BUTTON =====
+(function(){
+  var btn=document.getElementById('installBtn');if(!btn)return;
+  var deferred=null;
+  window.addEventListener('beforeinstallprompt',function(e){
+    e.preventDefault();
+    deferred=e;
+    btn.style.display='';
+  });
+  btn.addEventListener('click',function(){
+    if(!deferred){ showToast('Anv\u00E4nd webbl\u00E4sarens delningsmeny och v\u00E4lj \u201CL\u00E4gg till p\u00E5 startsidan\u201D.','warn'); return; }
+    var d=deferred;
+    deferred=null;
+    d.prompt();
+    d.userChoice.then(function(c){ btn.style.display='none'; if(c.outcome!=='accepted'){ setTimeout(function(){ if(!deferred) btn.style.display=''; },2000); } });
+  });
+  window.addEventListener('appinstalled',function(){ deferred=null; btn.style.display='none'; showToast('Svenska \u00E4r installerad som app!'); });
+})();
 // ===== TTS VOICE WARM-UP (iOS getVoices() is async & gesture-gated) =====
 function warmVoices(){try{window.__voicesCache=(window.speechSynthesis&&speechSynthesis.getVoices?speechSynthesis.getVoices():[])||[];}catch(e){window.__voicesCache=[];}}
 if(window.speechSynthesis){warmVoices();try{speechSynthesis.onvoiceschanged=warmVoices}catch(e){};}

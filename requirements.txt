@@ -1,1 +1,4 @@
 piper-tts>=1.2.0
+faster-whisper>=1.1.0
+pystray>=0.19.5
+Pillow>=10.0.0

@@ -22,3 +22,7 @@ index.html.pre-enui
 
 # Scratch / working drafts
 concept.html
+
+# Build outputs
+build/
+dist/
