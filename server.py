@@ -9,6 +9,10 @@ try:
     from imports import stt as stt_mod
 except Exception:
     stt_mod = None
+try:
+    from imports import capture as capture_mod
+except Exception:
+    capture_mod = None
 
 def _long(path):
     p = os.path.abspath(path)
@@ -52,6 +56,29 @@ class Handler(SimpleHTTPRequestHandler):
         super().do_HEAD()
     def do_POST(self):
         parsed = urlparse(self.path)
+        if parsed.path == '/stt/capture':
+            if stt_mod is None or not stt_mod.model_available():
+                self._json(501, {'ok': False, 'error': 'STT unavailable'})
+                return
+            params = parse_qs(parsed.query)
+            lang = params.get('lang', ['sv'])[0]
+            expected = params.get('expected', [''])[0]
+            try:
+                seconds = float(params.get('seconds', ['4'])[0])
+                seconds = max(1.0, min(10.0, seconds))
+            except Exception:
+                seconds = 4.0
+            if capture_mod is None or not capture_mod.available():
+                self._json(501, {'ok': False, 'error': 'mic capture unavailable'})
+                return
+            try:
+                wav = capture_mod.capture_wav(seconds)
+                pcm = stt_mod.wav_to_pcm16_16k(wav)
+                text, lang_out = stt_mod.transcribe(pcm, lang, expected)
+                self._json(200, {'ok': True, 'text': text, 'lang': lang_out})
+            except Exception as ex:
+                self._json(500, {'ok': False, 'error': str(ex)})
+            return
         if parsed.path == '/stt':
             if stt_mod is None or not stt_mod.model_available():
                 self._json(501, {'ok': False, 'error': 'STT unavailable'})

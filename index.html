@@ -2,6 +2,7 @@
 <html lang="sv">
 <head>
 <meta charset="UTF-8">
+<title>Svenska</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <script>
 try{
@@ -2319,16 +2320,28 @@ source.connect(proc);proc.connect(mute);mute.connect(ctx.destination);
 proc.onaudioprocess=onAudio;
 silenceTimer=setTimeout(sendWav,MAX_MS+1200);
 }
-if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){if(detectSTT())webkitSTT(phrase,courseId,micBtn,callback);else fail(t('stt.notSupported'));return;}
+if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){captureSTT(phrase,courseId,micBtn,callback);return;}
 navigator.mediaDevices.getUserMedia({audio:{channelCount:1,echoCancellation:true,noiseSuppression:true}})
 .then(function(ms){
 stream=ms;
 try{start()}catch(e){cleanup();fail(t('stt.failed'));}
 }).catch(function(err){
 micBtn.classList.remove('listening');
-if(detectSTT())webkitSTT(phrase,courseId,micBtn,callback);
-else{fail(t('stt.error')+(err&&err.name||''));}
+captureSTT(phrase,courseId,micBtn,callback);
 });
+}
+function captureSTT(phrase,courseId,micBtn,callback){
+const fb=sttFeedback(micBtn);
+fb.textContent=t('stt.listening');fb.className='mic-feedback';
+micBtn.classList.add('listening');
+const done=function(){micBtn.classList.remove('listening')};
+fetch('/stt/capture?lang=sv&expected='+encodeURIComponent(phrase||''),{method:'POST'})
+.then(function(r){return r.json()}).then(function(j){
+done();
+if(j&&j.ok&&j.text)sttVerdict(String(j.text),phrase,courseId,micBtn,callback);
+else if(detectSTT())webkitSTT(phrase,courseId,micBtn,callback);
+else{fb.textContent=t('stt.failed');fb.className='mic-feedback wrong';}
+}).catch(function(){done();if(detectSTT())webkitSTT(phrase,courseId,micBtn,callback);else{fb.textContent=t('stt.failed');fb.className='mic-feedback wrong';}});
 }
 function webkitSTT(phrase,courseId,micBtn,callback){
 const C=detectSTT();

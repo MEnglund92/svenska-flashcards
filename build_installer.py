@@ -1,7 +1,7 @@
 """build_installer.py - build the Svenska Windows installer.
 
-Steps: stage app files, embed Python + pip deps, Chrome for Testing,
-Piper voices, Whisper model, Inno Setup, ISCC -> dist/Svenska-Setup-X.exe.
+Steps: stage app files, embed Python + pip deps, Piper voices, Whisper
+model, Inno Setup, ISCC -> dist/Svenska-Setup-X.exe.
 Run with a local Python 3.11+ (or 3.12):  python build_installer.py
 """
 import json, os, shutil, subprocess, sys, urllib.request, zipfile
@@ -15,9 +15,9 @@ VERSION = '1.0.0'
 PY_VERSION = '3.12.10'
 PY_EMBED = 'python-%s-embed-amd64.zip' % PY_VERSION
 PY_URL = 'https://www.python.org/ftp/python/%s/%s' % (PY_VERSION, PY_EMBED)
-CFT_JSON = 'https://googlechromelabs.github.io/chrome-for-testing/last-known-good-versions-with-downloads.json'
 GET_PIP = 'https://bootstrap.pypa.io/get-pip.py'
-PIP_PKGS = ['piper-tts', 'faster-whisper', 'pystray', 'Pillow', 'onnxruntime']
+PIP_PKGS = ['piper-tts', 'faster-whisper', 'Pillow', 'onnxruntime', 'pywebview', 'sounddevice']
+PIP_PROBE = 'import piper, faster_whisper, PIL, onnxruntime, webview, sounddevice'
 WHISPER_BASE = 'https://huggingface.co/Systran/faster-whisper-base/resolve/main'
 WHISPER_FILES = ['model.bin', 'config.json', 'tokenizer.json', 'vocabulary.txt']
 WHISPER_DIR = os.path.join(APP, 'models', 'whisper')
@@ -34,7 +34,7 @@ ISCC_CANDIDATES = [
 
 # ---- fixtures copied into the installer (dev-only files excluded) ----
 APP_FILES = ['index.html', 'data.js', 'data_deck.js', 'novels_reading.json',
-             'manifest.json', 'sw.js', 'server.py', 'tray.pyw', 'appicon.ico']
+             'manifest.json', 'sw.js', 'server.py', 'appicon.ico']
 APP_DIRS = ['icons', 'fonts', 'imports']
 SKIP_IMPORTS = {'extract', '__pycache__'}
 
@@ -56,10 +56,21 @@ def stage_app():
     step('staging app files')
     if not os.path.isdir(APP):
         os.makedirs(APP)
+    for stale in ('chrome',):
+        target = os.path.join(APP, stale)
+        if os.path.isdir(target):
+            shutil.rmtree(target)
+    for name in ('tray.pyw',):
+        target = os.path.join(APP, name)
+        if os.path.isfile(target):
+            os.remove(target)
     for name in APP_FILES:
         src = os.path.join(ROOT, name)
         if os.path.isfile(src):
             shutil.copy2(src, os.path.join(APP, name))
+    launcher = os.path.join(ROOT, 'desktop', 'launcher.pyw')
+    if os.path.isfile(launcher):
+        shutil.copy2(launcher, os.path.join(APP, 'launcher.pyw'))
     for d in APP_DIRS:
         shutil.copytree(os.path.join(ROOT, d), os.path.join(APP, d),
                         dirs_exist_ok=True,
@@ -114,31 +125,19 @@ def stage_python():
     step('bootstrapping pip')
     fetch(GET_PIP, os.path.join(STAGE, 'get-pip.py'))
     subprocess.run([exe, os.path.join(STAGE, 'get-pip.py'), '--no-warn-script-location'], check=True)
+    ensure_pip_deps(exe)
+
+def ensure_pip_deps(exe=None):
+    if exe is None:
+        exe = os.path.join(PYDIR, 'python.exe')
+    try:
+        subprocess.run([exe, '-c', PIP_PROBE], check=True, capture_output=True)
+        print('pip deps already present')
+        return
+    except Exception:
+        pass
     step('pip install ' + ' '.join(PIP_PKGS))
     subprocess.run([exe, '-m', 'pip', 'install', '--no-warn-script-location', '--no-cache-dir'] + PIP_PKGS, check=True)
-
-def stage_chromium():
-    step('downloading Chrome for Testing')
-    info = json.loads(fetch(CFT_JSON).decode())
-    stable = info['channels']['Stable']
-    url = None
-    for d in stable['downloads']['chrome']:
-        if d['platform'] == 'win64':
-            url = d['url']
-            break
-    if not url:
-        raise SystemExit('no win64 chrome in cft json')
-    print('chrome version', stable['version'])
-    zip_path = os.path.join(STAGE, 'chrome-win64.zip')
-    fetch(url, zip_path)
-    step('extracting Chrome')
-    with zipfile.ZipFile(zip_path) as z:
-        z.extractall(STAGE)
-    src = os.path.join(STAGE, 'chrome-win64')
-    dst = os.path.join(APP, 'chrome')
-    if os.path.isdir(dst):
-        shutil.rmtree(dst)
-    os.rename(src, dst)
 
 def stage_models():
     step('copying Piper voices')
@@ -215,7 +214,7 @@ def render_iss():
     template = r'''
 #define MyAppName "Svenska"
 #define MyAppVersion "__VERSION__"
-#define MyAppExeName "tray.pyw"
+#define MyAppExeName "launcher.pyw"
 
 [Setup]
 AppId={{8E969ADC-0D3C-4B3E-9D7F-0A5F27E6C1B9}
@@ -243,16 +242,15 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 Name: "desktopicon"; Description: "Create a &desktop shortcut"; GroupDescription: "Additional shortcuts:"
 
 [Files]
-Source: "__APP__\*"; DestDir: "{app}"; Excludes: "chrome\*,Sources\*"; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "__APP__\chrome\*"; DestDir: "{app}\chrome"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "__APP__\*"; DestDir: "{app}"; Excludes: "Sources\*"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "__APP__\Sources\*.pdf"; DestDir: "{app}\Sources"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 [Icons]
-Name: "{group}\Svenska"; Filename: "{app}\python\pythonw.exe"; Parameters: "tray.pyw"; WorkingDir: "{app}"; IconFilename: "{app}\appicon.ico"; Comment: "Svenska - Swedish study app"
-Name: "{autodesktop}\Svenska"; Filename: "{app}\python\pythonw.exe"; Parameters: "tray.pyw"; WorkingDir: "{app}"; IconFilename: "{app}\appicon.ico"; Tasks: desktopicon
+Name: "{group}\Svenska"; Filename: "{app}\python\pythonw.exe"; Parameters: "launcher.pyw"; WorkingDir: "{app}"; IconFilename: "{app}\appicon.ico"; Comment: "Svenska - Swedish study app"
+Name: "{autodesktop}\Svenska"; Filename: "{app}\python\pythonw.exe"; Parameters: "launcher.pyw"; WorkingDir: "{app}"; IconFilename: "{app}\appicon.ico"; Tasks: desktopicon
 
 [Run]
-Filename: "{app}\python\pythonw.exe"; Parameters: "tray.pyw"; WorkingDir: "{app}"; Flags: nowait postinstall skipifsilent; Description: "Start Svenska now"
+Filename: "{app}\python\pythonw.exe"; Parameters: "launcher.pyw"; WorkingDir: "{app}"; Flags: nowait postinstall skipifsilent; Description: "Start Svenska now"
 '''.replace('__VERSION__', VERSION).replace('__DIST__', DIST).replace('__ICON__', os.path.join(ROOT, 'appicon.ico').replace('\\', '\\\\')).replace('__APP__', APP.replace('\\', '\\\\'))
     iss_path = os.path.join(STAGE, 'installer.iss')
     with open(iss_path, 'w', encoding='utf-8') as f:
@@ -267,8 +265,8 @@ def main():
     stage_app()
     if not os.path.isfile(os.path.join(PYDIR, 'python.exe')):
         stage_python()
-    if not os.path.isdir(os.path.join(APP, 'chrome')):
-        stage_chromium()
+    else:
+        ensure_pip_deps()
     if not os.path.isdir(WHISPER_DIR):
         stage_models()
     smoke_test()
