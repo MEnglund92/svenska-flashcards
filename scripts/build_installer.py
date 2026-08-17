@@ -1,7 +1,7 @@
-"""build_installer.py - build the Svenska Windows installer.
+"""build_installer.py - build the Learn Swedish Windows installer.
 
 Steps: stage app files, embed Python + pip deps, Piper voices, Whisper
-model, Inno Setup, ISCC -> dist/Svenska-Setup-X.exe.
+model, Inno Setup, ISCC -> dist/Learn-Swedish-Setup-X.exe.
 Run with a local Python 3.11+ (or 3.12):  python build_installer.py
 """
 import json, os, shutil, subprocess, sys, urllib.request, zipfile
@@ -11,7 +11,7 @@ STAGE = os.path.join(ROOT, 'build', 'stage')
 DIST = os.path.join(ROOT, 'dist')
 APP = os.path.join(STAGE, 'app')
 PYDIR = os.path.join(APP, 'python')
-VERSION = '1.0.0'
+VERSION = '1.1.0'
 PY_VERSION = '3.12.10'
 PY_EMBED = 'python-%s-embed-amd64.zip' % PY_VERSION
 PY_URL = 'https://www.python.org/ftp/python/%s/%s' % (PY_VERSION, PY_EMBED)
@@ -225,7 +225,7 @@ def install_inno():
 def render_iss():
     step('writing installer.iss')
     template = r'''
-#define MyAppName "Svenska"
+#define MyAppName "Learn Swedish"
 #define MyAppVersion "__VERSION__"
 #define MyAppExeName "launcher.pyw"
 
@@ -234,11 +234,11 @@ AppId={{8E969ADC-0D3C-4B3E-9D7F-0A5F27E6C1B9}
 AppName={#MyAppName}
 AppVersion={#MyAppVersion}
 AppPublisher=Local Study App
-DefaultDirName={localappdata}\Programs\Svenska
-DefaultGroupName=Svenska
+DefaultDirName={localappdata}\Programs\Learn Swedish
+DefaultGroupName=Learn Swedish
 PrivilegesRequired=lowest
 OutputDir=__DIST__
-OutputBaseFilename=Svenska-Setup-{#MyAppVersion}
+OutputBaseFilename=Learn-Swedish-Setup-{#MyAppVersion}
 Compression=zip
 SolidCompression=no
 WizardStyle=modern
@@ -259,11 +259,11 @@ Source: "__APP__\*"; DestDir: "{app}"; Excludes: "Sources\*"; Flags: ignoreversi
 Source: "__APP__\Sources\*.pdf"; DestDir: "{app}\Sources"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 [Icons]
-Name: "{group}\Svenska"; Filename: "{app}\python\pythonw.exe"; Parameters: "launcher.pyw"; WorkingDir: "{app}"; IconFilename: "{app}\appicon.ico"; Comment: "Svenska - Swedish study app"
-Name: "{autodesktop}\Svenska"; Filename: "{app}\python\pythonw.exe"; Parameters: "launcher.pyw"; WorkingDir: "{app}"; IconFilename: "{app}\appicon.ico"; Tasks: desktopicon
+Name: "{group}\Learn Swedish"; Filename: "{app}\python\pythonw.exe"; Parameters: "launcher.pyw"; WorkingDir: "{app}"; IconFilename: "{app}\appicon.ico"; Comment: "Learn Swedish - Swedish study app"
+Name: "{autodesktop}\Learn Swedish"; Filename: "{app}\python\pythonw.exe"; Parameters: "launcher.pyw"; WorkingDir: "{app}"; IconFilename: "{app}\appicon.ico"; Tasks: desktopicon
 
 [Run]
-Filename: "{app}\python\pythonw.exe"; Parameters: "launcher.pyw"; WorkingDir: "{app}"; Flags: nowait postinstall skipifsilent; Description: "Start Svenska now"
+Filename: "{app}\python\pythonw.exe"; Parameters: "launcher.pyw"; WorkingDir: "{app}"; Flags: nowait postinstall skipifsilent; Description: "Start Learn Swedish now"
 '''.replace('__VERSION__', VERSION).replace('__DIST__', DIST).replace('__ICON__', os.path.join(ROOT, 'appicon.ico').replace('\\', '\\\\')).replace('__APP__', APP.replace('\\', '\\\\'))
     iss_path = os.path.join(STAGE, 'installer.iss')
     with open(iss_path, 'w', encoding='utf-8') as f:
@@ -287,7 +287,7 @@ def main():
     iscc = find_iscc() or install_inno()
     step('running ISCC')
     subprocess.run([iscc, iss], check=True, cwd=STAGE)
-    out = os.path.join(DIST, 'Svenska-Setup-%s.exe' % VERSION)
+    out = os.path.join(DIST, 'Learn-Swedish-Setup-%s.exe' % VERSION)
     print('\nDONE: ' + out + ' (%d MB)' % (os.path.getsize(out) // (1024 * 1024)))
 
 if __name__ == '__main__':

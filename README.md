@@ -1,4 +1,6 @@
-# Svenska — Swedish Language Flashcards
+# Learn Swedish
+
+> This project was made specially for a relative learning Swedish.
 
 A complete offline-first Swedish study application: vocabulary flashcards, grammar, reading with TTS, and pronunciation practice with local speech recognition. No frameworks, no build step for the web app itself — a single-page PWA plus a small Python server for local TTS/STT, packaged as a Windows desktop app (WebView2) or a plain web server.
 
@@ -60,7 +62,7 @@ so there are no orphan server processes.
 python scripts/build_installer.py
 ```
 
-Produces a self-contained installer at `dist/Svenska-Setup-<version>.exe`
+Produces a self-contained installer at `dist/Learn-Swedish-Setup-<version>.exe`
 (per-user install, ~1.1 GB — it embeds Python, TTS/STT models, and all content).
 Staging downloads/assembles components on first run; subsequent runs reuse
 `build/stage/`.

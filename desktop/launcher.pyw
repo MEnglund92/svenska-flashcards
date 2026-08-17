@@ -1,4 +1,4 @@
-"""launcher.pyw - Svenska desktop launcher (WebView2 via pywebview).
+"""launcher.pyw - Learn Swedish desktop launcher (WebView2 via pywebview).
 
 Starts the local server (no console) and opens the app in a WebView2 window.
 The server runs in a thread of this same process, so closing the window
@@ -7,11 +7,11 @@ quits the app entirely. Run with pythonw.exe.
 import ctypes, os, socket, sys, threading, time, traceback
 
 BASE = os.path.dirname(os.path.abspath(__file__))
-LOCAL_DATA = os.path.join(os.environ.get('LOCALAPPDATA', os.path.expanduser('~')), 'Svenska')
+LOCAL_DATA = os.path.join(os.environ.get('LOCALAPPDATA', os.path.expanduser('~')), 'Learn Swedish')
 PORT_FILE = os.path.join(LOCAL_DATA, 'port.txt')
 LOG_FILE = os.path.join(LOCAL_DATA, 'launcher.log')
 DEFAULT_PORT = 5001
-LOCK_NAME = 'SvenskaTray'
+LOCK_NAME = 'LearnSwedishTray'
 
 def log(msg):
     try:
@@ -134,7 +134,7 @@ def main():
         return 1
     log('opening window')
     try:
-        webview.create_window('Svenska', url_of(port), width=1280, height=800,
+        webview.create_window('Learn Swedish', url_of(port), width=1280, height=800,
                               min_size=(900, 600), resizable=True)
         webview.start()
     except Exception as ex:

@@ -1,6 +1,6 @@
 {
-  "name": "Svenska — Swedish Study App",
-  "short_name": "Svenska",
+  "name": "Learn Swedish",
+  "short_name": "Learn Swedish",
   "description": "Complete Swedish language study app with flashcards, quizzes, matching, grammar concepts, resources, and novel reading",
   "start_url": "./",
   "scope": "./",

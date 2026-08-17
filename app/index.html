@@ -2,7 +2,7 @@
 <html lang="sv">
 <head>
 <meta charset="UTF-8">
-<title>Svenska</title>
+<title>Learn Swedish</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <script>
 try{
@@ -14,9 +14,9 @@ try{
 }catch(e){}
 </script>
 <meta name="theme-color" content="#050508">
-<meta name="apple-mobile-web-app-title" content="Svenska">
+<meta name="apple-mobile-web-app-title" content="Learn Swedish">
 <meta name="mobile-web-app-capable" content="yes">
-<title data-i18n="app.title">Svenska — Lär dig svenska</title>
+<title data-i18n="app.title">Learn Swedish</title>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="apple-touch-icon" href="icons/icon-180.png">
@@ -924,7 +924,7 @@ body{padding-left:env(safe-area-inset-left);padding-right:env(safe-area-inset-ri
 
 <!-- ===== LEFT NAV ===== -->
 <nav class="nav" id="nav">
-  <button class="nav-brand" id="brandHomeBtn" title="Hem">Svenska</button>
+  <button class="nav-brand" id="brandHomeBtn" title="Hem" data-i18n="app.brand">Svenska</button>
   <select class="course-select" id="navCourseSelect"></select>
   <div class="streak-pill" id="streakPill" title="Dagstreak">🔥<span id="streakVal">0</span></div>
   <div class="nav-items" id="navItems">
@@ -1643,8 +1643,8 @@ const langStrings={sv:{
 'sidebar.resetProgress':'Återställ framsteg',
 'sidebar.dueSrs':'SRS'
 },en:{
-'app.title':'Svenska — Learn Swedish',
-'app.brand':'Svenska — Learn Swedish',
+'app.title':'Learn Swedish',
+'app.brand':'Learn Swedish',
 'app.langName':'English',
 'nav.browse':'Browse',
 'nav.flashcards':'Flashcards',
@@ -3697,7 +3697,7 @@ browseFilter='weak';switchCourse();
 });
 document.getElementById('dashBackup')&&document.getElementById('dashBackup').addEventListener('click',function(){
 let data={};for(let c of courses)data[c.id]=loadStats(c.id);
-let blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});let a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='svenska-backup.json';a.click();URL.revokeObjectURL(a.href);
+let blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});let a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='learn-swedish-backup.json';a.click();URL.revokeObjectURL(a.href);
 });
 document.getElementById('dashRestore')&&document.getElementById('dashRestore').addEventListener('click',function(){document.getElementById('dashRestoreInput').click()});
 document.getElementById('dashRestoreInput')&&document.getElementById('dashRestoreInput').addEventListener('change',function(){
@@ -3978,7 +3978,7 @@ if('serviceWorker'in navigator)navigator.serviceWorker.register('sw.js').catch(f
     d.prompt();
     d.userChoice.then(function(c){ btn.style.display='none'; if(c.outcome!=='accepted'){ setTimeout(function(){ if(!deferred) btn.style.display=''; },2000); } });
   });
-  window.addEventListener('appinstalled',function(){ deferred=null; btn.style.display='none'; showToast('Svenska \u00E4r installerad som app!'); });
+  window.addEventListener('appinstalled',function(){ deferred=null; btn.style.display='none'; showToast(currentLang==='en'?'Learn Swedish is installed as an app!':'Svenska \u00E4r installerad som app!'); });
 })();
 // ===== TTS VOICE WARM-UP (iOS getVoices() is async & gesture-gated) =====
 function warmVoices(){try{window.__voicesCache=(window.speechSynthesis&&speechSynthesis.getVoices?speechSynthesis.getVoices():[])||[];}catch(e){window.__voicesCache=[];}}
