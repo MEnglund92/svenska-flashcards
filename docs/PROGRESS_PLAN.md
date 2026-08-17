@@ -19,19 +19,19 @@ A generic multi-strategy PDF extraction pipeline that converts Swedish textbooks
 - `confidence` — 0.0–1.0, drives auto-accept vs review routing
 - `source`, `page_num`, `notes`, `partOfSpeech`, `lemma`, `related`
 
-Output files: `data_<book>.json` in `C:\Users\Matt\Desktop\Education\Svenska\`.
+Output files: `data_<book>.json` in `<repo>\`.
 
 ---
 
 ## 2. Environment (setup on the new computer)
 
 - **OS:** Windows, PowerShell 5.1
-- **Python:** 3.12 (`C:\Users\matti\AppData\Local\Programs\Python\Python312`) — note: 3.14 is the default `python` on PATH; ALWAYS use `py -3.12` or the full exe path
+- **Python:** 3.12 (`<python312-install-dir>`) — note: 3.14 is the default `python` on PATH; ALWAYS use `py -3.12` or the full exe path
 - **Dependencies** (installed 2026-07-31): `PyMuPDF` 1.28, `Pillow` 12.3, `spaCy` 3.8.14 + `sv_core_news_sm`
   - Gotcha: `py -3.12 -m spacy download` fails without `click` (`ModuleNotFoundError: No module named 'click'`) — install `click` first, or `pip install` the model wheel from the spacy-models GitHub release
 - **Tesseract OCR:** 5.4 (not 5.5) at `C:\Program Files\Tesseract-OCR\tesseract.exe`
-  - `swe.traineddata` lives in a USER-WRITABLE tessdata dir: `C:\Users\matti\AppData\Local\Tesseract-OCR\tessdata\`
-  - **Every run script must set `os.environ['TESSDATA_PREFIX'] = r'C:\Users\matti\AppData\Local\Tesseract-OCR\tessdata'` before importing the pipeline** (Program Files is write-protected; the installed `tessdata\` only has `eng`+`osd`)
+  - `swe.traineddata` lives in a USER-WRITABLE tessdata dir: `%LOCALAPPDATA%\Tesseract-OCR\tessdata\`
+  - **Every run script must set `os.environ['TESSDATA_PREFIX'] = r'%LOCALAPPDATA%\Tesseract-OCR\tessdata'` before importing the pipeline** (Program Files is write-protected; the installed `tessdata\` only has `eng`+`osd`)
   - Settings: 200 dpi, `--psm 3` (dialogue/phrase books), `--psm 6` (dictionary columns)
   - Command: `tesseract <img> stdout -l swe+eng --psm 3` (timeout 120 s)
 - **Console gotcha:** always run with `PYTHONIOENCODING=utf-8` set, or Swedish characters print as `�`. Some PowerShell inline `python -c` quoting breaks with nested f-strings — prefer writing `.py` script files.
@@ -115,7 +115,7 @@ Novels (NovelStrategy — all entries go to review, none auto-accepted by design
 
 ## 5. In-Progress Work
 
-1. ~~**Novel batch run**~~ — **DONE 2026-07-31.** All 8 novels extracted (81,893 review entries; Ett jävla solsken resumed from its p101 checkpoint automatically). Runner `run_novels.py` is fixed (PDF preference, `Härskarteknik*` pattern, TESSDATA_PREFIX, `C:\Users\matti` paths) and reusable.
+1. ~~**Novel batch run**~~ — **DONE 2026-07-31.** All 8 novels extracted (81,893 review entries; Ett jävla solsken resumed from its p101 checkpoint automatically). Runner `run_novels.py` is fixed (PDF preference, `Härskarteknik*` pattern, TESSDATA_PREFIX, `%USERPROFILE%` paths) and reusable.
 2. **Review queue triage (next big task)** — 81,893 novel review entries + ~120 existing review entries sit in `data_*.json` `review` arrays. Plan §6.4 items: drop function-word noise (`dom`, `just`, `visste`…), dedupe across books, then merge into `data.js`.
 3. **PhraseStrategy quality** (Så säger man): ~42 entries/14 pages on test; good dialogue turns, occasional OCR junk (`KES`, `tagen.)`) — acceptable.
 
