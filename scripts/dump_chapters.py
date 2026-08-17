@@ -1,15 +1,16 @@
 import json, os, re, sys
 sys.stdout.reconfigure(encoding='utf-8')
+from _common import ROOT, APP_DIR, setup_paths
+setup_paths()
 
-ROOT = r'C:\Users\matti\Desktop\Education\Svenska'
 OUT = os.path.join(ROOT, 'novels_text')
 
 
 def slug(s):
-    return re.sub(r'[^a-zåäö0-9]+', '_', s.lower()).strip('_')
+    return re.sub(r'[^a-z���0-9]+', '_', s.lower()).strip('_')
 
 
-d = json.load(open(os.path.join(ROOT, 'novels_reading.json'), encoding='utf-8'))
+d = json.load(open(os.path.join(APP_DIR, 'novels_reading.json'), encoding='utf-8'))
 total = 0
 for b in d['novels']:
     bdir = os.path.join(OUT, b['id'])

@@ -6,7 +6,7 @@ Run with a local Python 3.11+ (or 3.12):  python build_installer.py
 """
 import json, os, shutil, subprocess, sys, urllib.request, zipfile
 
-ROOT = os.path.dirname(os.path.abspath(__file__))
+from _common import ROOT
 STAGE = os.path.join(ROOT, 'build', 'stage')
 DIST = os.path.join(ROOT, 'dist')
 APP = os.path.join(STAGE, 'app')
@@ -33,9 +33,12 @@ ISCC_CANDIDATES = [
 ]
 
 # ---- fixtures copied into the installer (dev-only files excluded) ----
+WEB_DIR = os.path.join(ROOT, 'app')            # web frontend
+SERVER_DIR = os.path.join(ROOT, 'server')      # python backend
 APP_FILES = ['index.html', 'data.js', 'data_deck.js', 'novels_reading.json',
-             'manifest.json', 'sw.js', 'server.py', 'appicon.ico']
-APP_DIRS = ['icons', 'fonts', 'imports']
+             'manifest.json', 'sw.js']
+SERVER_FILES = ['server.py']
+APP_DIRS = [('icons', 'icons'), ('fonts', 'fonts')]
 SKIP_IMPORTS = {'extract', '__pycache__'}
 
 def fetch(url, dest=None, binary=True):
@@ -65,16 +68,26 @@ def stage_app():
         if os.path.isfile(target):
             os.remove(target)
     for name in APP_FILES:
-        src = os.path.join(ROOT, name)
+        src = os.path.join(WEB_DIR, name)
+        if os.path.isfile(src):
+            shutil.copy2(src, os.path.join(APP, name))
+    for name in SERVER_FILES:
+        src = os.path.join(SERVER_DIR, name)
         if os.path.isfile(src):
             shutil.copy2(src, os.path.join(APP, name))
     launcher = os.path.join(ROOT, 'desktop', 'launcher.pyw')
     if os.path.isfile(launcher):
         shutil.copy2(launcher, os.path.join(APP, 'launcher.pyw'))
-    for d in APP_DIRS:
-        shutil.copytree(os.path.join(ROOT, d), os.path.join(APP, d),
+    ico = os.path.join(ROOT, 'appicon.ico')
+    if os.path.isfile(ico):
+        shutil.copy2(ico, os.path.join(APP, 'appicon.ico'))
+    for sub, dst in APP_DIRS:
+        shutil.copytree(os.path.join(WEB_DIR, sub), os.path.join(APP, dst),
                         dirs_exist_ok=True,
                         ignore=shutil.ignore_patterns('*.pyc', '__pycache__'))
+    shutil.copytree(os.path.join(SERVER_DIR, 'imports'), os.path.join(APP, 'imports'),
+                    dirs_exist_ok=True,
+                    ignore=shutil.ignore_patterns('*.pyc', '__pycache__'))
     imports_dst = os.path.join(APP, 'imports', 'extract')
     if os.path.isdir(imports_dst):
         shutil.rmtree(imports_dst)
@@ -104,7 +117,7 @@ def make_ico():
     except ImportError:
         subprocess.run([sys.executable, '-m', 'pip', 'install', '--quiet', 'Pillow'], check=True)
         from PIL import Image
-    img = Image.open(os.path.join(ROOT, 'icons', 'icon-512.png')).convert('RGBA')
+    img = Image.open(os.path.join(ROOT, 'app', 'icons', 'icon-512.png')).convert('RGBA')
     img.save(os.path.join(ROOT, 'appicon.ico'), sizes=[(16, 24), (32, 32), (48, 48), (64, 64), (128, 128), (256, 256)])
     print('appicon.ico written')
 

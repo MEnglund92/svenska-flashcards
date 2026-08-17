@@ -14,6 +14,8 @@ try:
 except Exception:
     capture_mod = None
 
+WEBROOT = os.environ.get('WEBROOT') or os.getcwd()
+
 def _long(path):
     p = os.path.abspath(path)
     if os.name == 'nt' and len(p) >= 240 and not p.startswith('\\\\?\\'):
@@ -24,6 +26,8 @@ class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):
     daemon_threads = True
 
 class Handler(SimpleHTTPRequestHandler):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, directory=WEBROOT, **kwargs)
     def translate_path(self, path):
         root_path = super().translate_path(path)
         if os.path.isfile(_long(root_path)):
@@ -32,7 +36,7 @@ class Handler(SimpleHTTPRequestHandler):
             decoded = unquote(path.split('?', 1)[0].split('#', 1)[0]).lstrip('/')
         except Exception:
             return root_path
-        base = os.path.normpath(os.getcwd())
+        base = os.path.normpath(self.directory)
         alt = os.path.normpath(os.path.join(base, 'Sources', decoded.replace('\\', '/')))
         if alt != base and alt.startswith(base + os.sep) and os.path.isfile(_long(alt)):
             return _long(alt)

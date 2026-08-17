@@ -1,14 +1,14 @@
 import sys, json, time, os, glob
 sys.stdout.reconfigure(encoding='utf-8')
-os.environ['TESSDATA_PREFIX'] = r'C:\Users\matti\AppData\Local\Tesseract-OCR\tessdata'
-sys.path.insert(0, r'C:\Users\matti\Desktop\Education\Svenska')
+from _common import ROOT, SOURCES_DIR, setup_paths, tessdata_dir
+setup_paths()
+os.environ['TESSDATA_PREFIX'] = tessdata_dir()
 from imports.extract.pipeline import run, _ocr_cache
 
 _ocr_cache.clear()
 
-ROOT = r'C:\Users\matti\Desktop\Education\Svenska'
 pdf = None
-for p in glob.glob(os.path.join(ROOT, 'Sources', 'Uppsatshandboken*')):
+for p in glob.glob(os.path.join(SOURCES_DIR, 'Uppsatshandboken*')):
     pdf = p
     break
 print(f'PDF: {os.path.basename(pdf)}')

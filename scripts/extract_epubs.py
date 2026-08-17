@@ -22,8 +22,10 @@ from bs4 import BeautifulSoup
 import ebooklib
 from ebooklib import epub
 
-ROOT = os.path.dirname(os.path.abspath(__file__))
-SOURCES = os.path.join(ROOT, 'Sources', 'Extractable')
+from _common import ROOT, SOURCES_DIR, setup_paths
+setup_paths()
+
+SOURCES = os.path.join(SOURCES_DIR, 'Extractable')
 OUT = os.path.join(ROOT, 'books_extracted.json')
 
 HEADING_TAGS = ['h1', 'h2', 'h3', 'h4']

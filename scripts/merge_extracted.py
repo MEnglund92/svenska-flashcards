@@ -16,8 +16,10 @@ import os
 import re
 import unicodedata
 
-ROOT = os.path.dirname(os.path.abspath(__file__))
-NOVELS = os.path.join(ROOT, 'novels_reading.json')
+from _common import ROOT, APP_DIR, setup_paths
+setup_paths()
+
+NOVELS = os.path.join(APP_DIR, 'novels_reading.json')
 EXT = os.path.join(ROOT, 'books_extracted.json')
 
 REPLACE_IDS = {

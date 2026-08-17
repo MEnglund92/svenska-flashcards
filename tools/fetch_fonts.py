@@ -1,11 +1,11 @@
 """fetch_fonts.py - download latin woff2 subsets of Inter + Playfair Display
-into <repo>/fonts/ and generate fonts/fonts.css for 100% offline usage.
+into <repo>/app/fonts/ and generate fonts/fonts.css for 100% offline usage.
 stdlib only. Run: python tools/fetch_fonts.py
 """
 import hashlib, pathlib, re, urllib.request
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
-FONTS_DIR = ROOT / 'fonts'
+FONTS_DIR = ROOT / 'app' / 'fonts'
 FAMILIES = "family=Inter:wght@400;500;600;700;800&family=Playfair+Display:wght@500;600;700"
 CSS_URL = "https://fonts.googleapis.com/css2?" + FAMILIES + "&display=swap"
 UA = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "

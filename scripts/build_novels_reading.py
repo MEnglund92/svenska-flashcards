@@ -12,12 +12,13 @@ Chapter segmentation:
 import sys, os, json, re, glob
 from collections import Counter
 sys.stdout.reconfigure(encoding='utf-8')
+from _common import ROOT, APP_DIR, SOURCES_DIR, setup_paths
+setup_paths()
 
 import fitz
 import spacy
 
-ROOT = r'C:\Users\matti\Desktop\Education\Svenska'
-SOURCES = os.path.join(ROOT, 'Sources')
+SOURCES = SOURCES_DIR
 
 # book id -> (glob pattern on Sources, data file for vocab)
 BOOKS = [
@@ -242,7 +243,7 @@ def load_data_js_translations():
     global DATA_JS_TRANS
     if DATA_JS_TRANS:
         return
-    path = os.path.join(ROOT, 'data.js')
+    path = os.path.join(APP_DIR, 'data.js')
     if not os.path.exists(path):
         return
     text = open(path, encoding='utf-8').read()
@@ -346,7 +347,7 @@ def main():
         novels.append(book)
         doc.close()
 
-    out = os.path.join(ROOT, 'novels_reading.json')
+    out = os.path.join(APP_DIR, 'novels_reading.json')
     with open(out, 'w', encoding='utf-8') as f:
         json.dump({'generated': '2026-07-31', 'novels': novels}, f, ensure_ascii=False)
 

@@ -4,7 +4,13 @@ BASE = os.path.normpath(os.path.join(os.path.dirname(__file__), '..', '..', 'tts
 
 _MODEL_DIR = os.environ.get('WHISPER_MODEL_DIR', '')
 if not _MODEL_DIR or not os.path.isdir(_MODEL_DIR):
-    _MODEL_DIR = os.path.normpath(os.path.join(os.path.dirname(__file__), '..', 'models', 'whisper'))
+    here = os.path.dirname(os.path.abspath(__file__))
+    for cand in (os.path.join(here, '..', '..', '..', 'models', 'whisper'),
+                 os.path.join(here, '..', '..', 'models', 'whisper'),
+                 os.path.join(here, '..', 'models', 'whisper')):
+        if os.path.isdir(cand):
+            _MODEL_DIR = os.path.normpath(cand)
+            break
 
 _model = None
 _model_error = None

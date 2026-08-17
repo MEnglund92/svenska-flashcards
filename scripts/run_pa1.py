@@ -1,18 +1,19 @@
 import sys, json, time, os, glob
 sys.stdout.reconfigure(encoding='utf-8')
-os.environ['TESSDATA_PREFIX'] = r'C:\Users\matti\AppData\Local\Tesseract-OCR\tessdata'
-sys.path.insert(0, r'C:\Users\matti\Desktop\Education\Svenska')
+from _common import ROOT, SOURCES_DIR, setup_paths, tessdata_dir
+setup_paths()
+os.environ['TESSDATA_PREFIX'] = tessdata_dir()
 from imports.extract.pipeline import run, _ocr_cache
 
 _ocr_cache.clear()
 
 pdf = None
-for p in glob.glob(r'C:\Users\matti\Desktop\Education\Svenska\Sources\På svenska 1 Lärobok*'):
+for p in glob.glob(os.path.join(SOURCES_DIR, 'P� svenska 1 L�robok*')):
     pdf = p
     break
 print(f'PDF: {pdf}')
 
-ckpt = r'C:\Users\matti\Desktop\Education\Svenska\pa1_checkpoint.json'
+ckpt = os.path.join(ROOT, 'pa1_checkpoint.json')
 resume = os.path.exists(ckpt)
 print(f'Resume: {resume}')
 
@@ -20,7 +21,7 @@ t0 = time.time()
 result = run(pdf, strategy='word_list', checkpoint_path=ckpt, checkpoint_every=25, resume=resume)
 elapsed = time.time() - t0
 
-out = r'C:\Users\matti\Desktop\Education\Svenska\data_pa_svenska_1.json'
+out = os.path.join(ROOT, 'data_pa_svenska_1.json')
 with open(out, 'w', encoding='utf-8') as f:
     json.dump(result, f, ensure_ascii=False, indent=2)
 

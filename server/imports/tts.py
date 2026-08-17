@@ -1,7 +1,16 @@
 import io, os, wave, piper
 
 ENV_BASE = os.environ.get('TTS_MODELS_DIR', '')
-BASE = ENV_BASE if ENV_BASE and os.path.isdir(ENV_BASE) else os.path.normpath(os.path.join(os.path.dirname(__file__), '..', '..', 'tts-models'))
+if ENV_BASE and os.path.isdir(ENV_BASE):
+    BASE = ENV_BASE
+else:
+    here = os.path.dirname(os.path.abspath(__file__))
+    BASE = ''
+    for cand in (os.path.join(here, '..', '..', '..', 'tts-models'),
+                 os.path.join(here, '..', '..', 'tts-models')):
+        if os.path.isdir(cand):
+            BASE = os.path.normpath(cand)
+            break
 
 VOICE_CONFIGS = {
     'en-US': {

@@ -1,7 +1,8 @@
 import sys, json, time, os, glob
 sys.stdout.reconfigure(encoding='utf-8')
-os.environ['TESSDATA_PREFIX'] = r'C:\Users\matti\AppData\Local\Tesseract-OCR\tessdata'
-sys.path.insert(0, r'C:\Users\matti\Desktop\Education\Svenska')
+from _common import ROOT, SOURCES_DIR, setup_paths, tessdata_dir
+setup_paths()
+os.environ['TESSDATA_PREFIX'] = tessdata_dir()
 from imports.extract.pipeline import run, _ocr_cache
 
 _ocr_cache.clear()
@@ -9,9 +10,8 @@ _ocr_cache.clear()
 novels = ['Ett jävla solsken*', 'Expeditionen*', 'Omgiven av idioter*', 'Ondskan*',
           'Sapiens*', 'Tio tankar om arbete*', 'Ålevangeliet*', 'Härskarteknik*']
 
-ROOT = r'C:\Users\matti\Desktop\Education\Svenska'
 for pat in novels:
-    matches = glob.glob(os.path.join(ROOT, 'Sources', '*' + pat))
+    matches = glob.glob(os.path.join(SOURCES_DIR, '*' + pat))
     if not matches:
         print(f'!! No match for {pat}')
         continue

@@ -14,22 +14,22 @@ import os
 import subprocess
 import sys
 
-os.environ['TESSDATA_PREFIX'] = r'C:\Users\matti\AppData\Local\Tesseract-OCR\tessdata'
+from _common import ROOT, SOURCES_DIR, setup_paths, tesseract_exe, tessdata_dir
+setup_paths()
+os.environ['TESSDATA_PREFIX'] = tessdata_dir()
 
 import fitz
 
-ROOT = r'C:\Users\matti\Desktop\Education\Svenska'
-PDF = os.path.join(ROOT, 'Sources', 'Extractable', 'B1-B2 (Intermediate)',
+PDF = os.path.join(SOURCES_DIR, 'Extractable', 'B1-B2 (Intermediate)',
                    'Educational-Books', 'Grammar',
                    'Svensk funktionell grammatik (Maria Bolander) (z-library.sk, 1lib.sk, z-lib.sk) (1).pdf')
-TESS = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
+TESS = tesseract_exe()
 OUT = os.path.join(ROOT, 'books_extracted.json')
 CKPT = os.path.join(ROOT, 'bolander_checkpoint.json')
 BOOK_ID = 'bolander-grammatik'
 MIN_CHARS = 30
 STEP = 12
 
-sys.path.insert(0, ROOT)
 from extract_pdfs import reconstruct  # noqa: E402
 
 
